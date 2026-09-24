@@ -18,3 +18,5 @@ htmlcov/
 # Sistema operacional e IDE
 .DS_Store
 .vscode/
+
+backend/data/*.csv
