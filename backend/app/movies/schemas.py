@@ -1,5 +1,5 @@
 
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -36,13 +36,6 @@ class PersonOut(BaseModel):
     sk_person_id: str
     nome_pessoa: str
     tipo_pessoa: str
-
-# Detalhes de um filme, incluindo relacionamentos.
-class MovieDetail(MovieOut):
-
-    genres: list[str]
-    companies: list[str]
-    people: list[PersonOut]
 
 # Esquema para criação de um novo filme.
 class MovieCreate(BaseModel):
@@ -129,3 +122,45 @@ class MovieUpdate(BaseModel):
                 vistos.add(genero.casefold())
 
         return generos
+
+# Schema para criação de uma avaliação de filme.
+class ReviewCreate(BaseModel):
+    nome: str = Field(min_length=1, max_length=120)
+    nota: float = Field(ge=1, le=5)
+    comentario: str = Field(min_length=1, max_length=4000)
+
+    @field_validator("nome", "comentario")
+    @classmethod
+    def validar_texto(cls, value: str) -> str:
+        value = value.strip()
+
+        if not value:
+            raise ValueError("O campo não pode estar vazio")
+
+        return value
+
+# Schema para output de uma avaliação de filme.
+class ReviewOut(BaseModel):
+    sk_movie_review_id: str
+    sk_movie_id: str
+    nome: str
+    nota: float
+    comentario: str
+    created_at: datetime
+
+# Schema para output de avaliações de filme, incluindo estatísticas.
+class MovieReviewsOut(BaseModel):
+    movie_id: str
+    reviews: list[ReviewOut]
+    total: int
+    nota_media: float | None
+
+# Detalhes de um filme, incluindo relacionamentos.
+class MovieDetail(MovieOut):
+
+    genres: list[str]
+    companies: list[str]
+    people: list[PersonOut]
+    reviews: list[ReviewOut] = Field(default_factory=list)
+    total_avaliacoes: int = 0
+    nota_media: float | None = None

@@ -1,16 +1,24 @@
+from math import ceil
 from uuid import uuid4
 
-from math import ceil
-
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db.session import get_db
-from app.movies.models import DimMovie, DimGenre, DimPerson
-from app.movies.schemas import MovieOut, PaginatedMovies, MovieDetail, PersonOut, MovieCreate, MovieUpdate
-
+from app.movies.models import DimGenre, DimMovie, DimPerson, MovieReview
+from app.movies.schemas import (
+    MovieCreate,
+    MovieDetail,
+    MovieOut,
+    MovieReviewsOut,
+    MovieUpdate,
+    PaginatedMovies,
+    PersonOut,
+    ReviewCreate,
+    ReviewOut,
+)
 
 router = APIRouter()
 
@@ -64,44 +72,27 @@ async def get_movie(
     movie_id: str,
     db: AsyncSession = Depends(get_db),
 ):
-    query = (
+    # Busca o filme com todos os relacionamentos necessários.
+    result = await db.execute(
         select(DimMovie)
         .options(
-            selectinload(DimMovie.genres), # Carregando relacionaments de forma explícita
+            selectinload(DimMovie.genres),
             selectinload(DimMovie.companies),
             selectinload(DimMovie.people),
+            selectinload(DimMovie.reviews),
         )
         .where(DimMovie.sk_movie_id == movie_id)
     )
 
-    result = await db.execute(query)
     movie = result.scalar_one_or_none()
 
-    # Retorna 404 quando o filme não existe.
     if movie is None:
         raise HTTPException(
-            status_code = 404,
-            detail = "Filme não encontrado",
+            status_code=404,
+            detail="Filme não encontrado",
         )
 
-    # Converte os dados do banco para o formato da API.
-    detail = MovieOut.model_validate(movie).model_dump()
-
-    return MovieDetail(
-        **detail,
-        genres=[
-            genre.nome_genero
-            for genre in movie.genres
-        ],
-        companies=[
-            company.nome_produtora
-            for company in movie.companies
-        ],
-        people=[
-            PersonOut.model_validate(person)
-            for person in movie.people
-        ],
-    )
+    return format_movie_detail(movie)
 
 # Cria o filme e associa seu diretor e seus gêneros
 @router.post(
@@ -172,29 +163,14 @@ async def create_movie(
             selectinload(DimMovie.genres),
             selectinload(DimMovie.companies),
             selectinload(DimMovie.people),
+            selectinload(DimMovie.reviews),
         )
         .where(DimMovie.sk_movie_id == movie_id)
     )
 
     movie = result.scalar_one()
 
-    detail = MovieOut.model_validate(movie).model_dump()
-
-    return MovieDetail(
-        **detail,
-        genres=[
-            genre.nome_genero
-            for genre in movie.genres
-        ],
-        companies=[
-            company.nome_produtora
-            for company in movie.companies
-        ],
-        people=[
-            PersonOut.model_validate(person)
-            for person in movie.people
-        ],
-    )
+    return format_movie_detail(movie)
 
 
 @router.patch("/{movie_id}", response_model=MovieDetail)
@@ -210,6 +186,7 @@ async def update_movie(
             selectinload(DimMovie.genres),
             selectinload(DimMovie.companies),
             selectinload(DimMovie.people),
+            selectinload(DimMovie.reviews),
         )
         .where(DimMovie.sk_movie_id == movie_id)
     )
@@ -310,20 +287,7 @@ async def update_movie(
 
     movie = result.scalar_one()
 
-    detail = MovieOut.model_validate(movie).model_dump()
-
-    return MovieDetail(
-        **detail,
-        genres=[genre.nome_genero for genre in movie.genres],
-        companies=[
-            company.nome_produtora
-            for company in movie.companies
-        ],
-        people=[
-            PersonOut.model_validate(person)
-            for person in movie.people
-        ],
-    )
+    return format_movie_detail(movie)
 
 
 @router.delete(
@@ -346,3 +310,134 @@ async def delete_movie(
     # Remove o filme e confirma a transação.
     await db.delete(movie)
     await db.commit()
+
+# Lista as avaliações individuais de um filme, incluindo a média das notas.
+@router.get(
+    "/{movie_id}/reviews",
+    response_model=MovieReviewsOut,
+)
+async def list_reviews(
+    movie_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    # Verifica se o filme existe.
+    movie = await db.get(DimMovie, movie_id)
+
+    if movie is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Filme não encontrado",
+        )
+
+    # Busca as avaliações individuais do filme.
+    result = await db.execute(
+        select(MovieReview)
+        .where(MovieReview.sk_movie_id == movie_id)
+        .order_by(
+            MovieReview.created_at.desc(),
+            MovieReview.sk_movie_review_id,
+        )
+    )
+
+    reviews = result.scalars().all()
+
+    # Calcula a média apenas das avaliações individuais.
+    total = len(reviews)
+
+    nota_media = (
+        round(sum(review.nota for review in reviews) / total / 2, 2)
+        if total > 0
+        else None
+    )
+
+    return MovieReviewsOut(
+        movie_id=movie_id,
+        reviews=[
+            format_review(review)
+            for review in reviews
+        ],
+        total=total,
+        nota_media=nota_media,
+    )
+
+# Cria uma avaliação individual de um filme, convertendo a nota para a escala de 0–10.
+@router.post(
+    "/{movie_id}/reviews",
+    response_model=ReviewOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_review(
+    movie_id: str,
+    data: ReviewCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    # Confere se o filme existe.
+    movie = await db.get(DimMovie, movie_id)
+
+    if movie is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Filme não encontrado",
+        )
+
+    # Converte a nota de 1–5 para a escala de 0–10 do banco.
+    review = MovieReview(
+        sk_movie_id=movie_id,
+        nome=data.nome,
+        nota=data.nota * 2,
+        comentario=data.comentario,
+    )
+
+    db.add(review)
+    await db.commit()
+    await db.refresh(review)
+
+    return format_review(review)
+
+
+# Converte a nota armazenada de 0–10 para a escala de 0–5.
+def format_review(review: MovieReview) -> ReviewOut:
+    return ReviewOut(
+        sk_movie_review_id=review.sk_movie_review_id,
+        sk_movie_id=review.sk_movie_id,
+        nome=review.nome,
+        nota=review.nota / 2,
+        comentario=review.comentario,
+        created_at=review.created_at,
+    )
+
+# Formata os detalhes de um filme, incluindo relacionamentos e estatísticas de avaliações.
+def format_movie_detail(movie: DimMovie) -> MovieDetail:
+    # Converte as avaliações para a escala de cinco estrelas.
+    reviews = [format_review(review) for review in movie.reviews]
+
+    # Calcula a média das avaliações individuais.
+    total = len(reviews)
+
+    nota_media = (
+        round(sum(review.nota for review in reviews) / total, 2)
+        if total > 0
+        else None
+    )
+
+    # Aproveita os campos básicos do filme.
+    detail = MovieOut.model_validate(movie).model_dump()
+
+    return MovieDetail(
+        **detail,
+        genres=[
+            genre.nome_genero
+            for genre in movie.genres
+        ],
+        companies=[
+            company.nome_produtora
+            for company in movie.companies
+        ],
+        people=[
+            PersonOut.model_validate(person)
+            for person in movie.people
+        ],
+        reviews=reviews,
+        total_avaliacoes=total,
+        nota_media=nota_media,
+    )
