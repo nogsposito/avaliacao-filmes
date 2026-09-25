@@ -1,122 +1,144 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+
+import { useEffect, useState } from "react";
+import { getMovies, type Movie } from "./services/movies";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadMovies() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const data = await getMovies(page, 12, search);
+
+        if (!active) return;
+
+        setMovies(data.items);
+        setTotalPages(data.total_pages);
+        setTotal(data.total);
+      } catch {
+        if (active) {
+          setError("Erro ao carregar os filmes.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadMovies();
+
+    return () => {
+      active = false;
+    };
+  }, [page, search]);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
+    <main className="container">
+      <header className="header">
         <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+          <p className="eyebrow">ROCKETLAB · ADMIN</p>
+          <h1>Catálogo de filmes</h1>
+          <p className="subtitle">
+            Consulte e gerencie os filmes cadastrados.
           </p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
+
+        <button className="primary-button" disabled>
+          + Novo filme
         </button>
+      </header>
+
+      <section className="toolbar">
+        <input
+          type="search"
+          placeholder="Pesquisar por título..."
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setPage(1);
+          }}
+        />
+
+        <span>{total} filmes encontrados</span>
       </section>
 
-      <div className="ticks"></div>
+      {loading && <p>Carregando filmes...</p>}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {error && <p className="error">{error}</p>}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {!loading && !error && movies.length === 0 && (
+        <p>Nenhum filme encontrado.</p>
+      )}
+
+      {!loading && !error && (
+        <section className="movie-grid">
+          {movies.map((movie) => (
+            <article
+              className="movie-card"
+              key={movie.sk_movie_id}
+            >
+              <div className="poster">
+                {movie.url_poster ? (
+                  <img
+                    src={movie.url_poster}
+                    alt={`Pôster de ${movie.titulo}`}
+                    loading="lazy"
+                  />
+                ) : (
+                  <span>Sem pôster</span>
+                )}
+              </div>
+
+              <div className="movie-info">
+                <h2>{movie.titulo}</h2>
+                <p>
+                  {movie.ano_lancamento ?? "Ano desconhecido"}
+                </p>
+                <p className="synopsis">
+                  {movie.sinopse || "Sinopse indisponível."}
+                </p>
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
+
+      {!loading && !error && totalPages > 1 && (
+        <nav className="pagination">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+          >
+            Anterior
+          </button>
+
+          <span>
+            Página {page} de {totalPages}
+          </span>
+
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Próxima
+          </button>
+        </nav>
+      )}
+    </main>
+  );
 }
 
-export default App
+export default App;
