@@ -312,3 +312,81 @@ h1 {
     max-width: 280px;
   }
 }
+
+.form-heading {
+  margin-bottom: 32px;
+}
+
+.movie-form {
+  display: grid;
+  gap: 24px;
+  max-width: 800px;
+  padding: 32px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background: white;
+}
+
+.movie-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.movie-form input,
+.movie-form textarea {
+  width: 100%;
+  padding: 13px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  color: #222;
+  font: inherit;
+  font-weight: 400;
+}
+
+.movie-form input:focus,
+.movie-form textarea:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.movie-form small {
+  color: #777;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.secondary-button {
+  padding: 14px 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .movie-form {
+    padding: 20px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}

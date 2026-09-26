@@ -45,6 +45,16 @@ export interface MovieDetail extends Movie {
   nota_media: number | null;
 }
 
+export interface MovieCreate {
+  titulo: string;
+  diretor: string;
+  ano_lancamento: number;
+  generos: string[];
+  sinopse: string | null;
+  duracao_minutos: number | null;
+  url_poster: string | null;
+}
+
 export async function getMovies(
   page = 1,
   pageSize = 12,
@@ -76,6 +86,26 @@ export async function getMovie(
 
   if (!response.ok) {
     throw new Error("Não foi possível carregar os detalhes do filme.");
+  }
+
+  return response.json();
+}
+
+export async function createMovie(
+  data: MovieCreate
+): Promise<MovieDetail> {
+  const response = await fetch(`${API_URL}/movies`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Erro ao cadastrar filme (HTTP ${response.status}).`
+    );
   }
 
   return response.json();

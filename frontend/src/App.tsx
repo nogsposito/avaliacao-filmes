@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 
 import MovieDetails from "./components/MovieDetails";
+import MovieForm from "./components/MovieForm";
 import { getMovies, type Movie } from "./services/movies";
 
 import "./App.css";
@@ -17,6 +18,7 @@ function App() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -55,6 +57,20 @@ function App() {
     };
   }, [page, search]);
 
+
+  if (showCreateForm) {
+    return (
+      <MovieForm
+        onCancel={() => setShowCreateForm(false)}
+        onCreated={(movie) => {
+          setShowCreateForm(false);
+          setSelectedMovieId(movie.sk_movie_id);
+        }}
+      />
+    );
+  }
+
+
   if (selectedMovieId) {
     return (
       <MovieDetails
@@ -75,9 +91,13 @@ function App() {
           </p>
         </div>
 
-        <button className="primary-button" disabled>
+        <button
+          className="primary-button"
+          onClick={() => setShowCreateForm(true)}
+        >
           + Novo filme
         </button>
+        
       </header>
 
       <section className="toolbar">
