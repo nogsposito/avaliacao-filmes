@@ -390,3 +390,19 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
+
+.details-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  color: #777;
+  font-size: 14px;
+}
+
+.details-meta span:not(:last-child)::after {
+  content: "·";
+  margin-left: 12px;
+  color: #aaa;
+}

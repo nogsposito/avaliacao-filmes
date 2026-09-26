@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+
 import {
   getMovie,
   type MovieDetail,
@@ -8,11 +9,13 @@ import {
 interface MovieDetailsProps {
   movieId: string;
   onBack: () => void;
+  onEdit: () => void;
 }
 
 function MovieDetails({
   movieId,
   onBack,
+  onEdit,
 }: MovieDetailsProps) {
   const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +39,7 @@ function MovieDetails({
           setError(
             error instanceof Error
               ? error.message
-              : "Erro ao carregar o filme."
+              : "Não foi possível carregar o filme."
           );
         }
       } finally {
@@ -56,7 +59,7 @@ function MovieDetails({
   if (loading) {
     return (
       <main className="container">
-        <p>Carregando detalhes...</p>
+        <p>Carregando filme...</p>
       </main>
     );
   }
@@ -64,9 +67,14 @@ function MovieDetails({
   if (error || !movie) {
     return (
       <main className="container">
-        <button className="back-button" onClick={onBack}>
-          ← Voltar
+        <button
+          type="button"
+          className="back-button"
+          onClick={onBack}
+        >
+          ← Voltar ao catálogo
         </button>
+
         <p className="error">
           {error || "Filme não encontrado."}
         </p>
@@ -80,11 +88,15 @@ function MovieDetails({
 
   return (
     <main className="container">
-      <button className="back-button" onClick={onBack}>
-        Voltar ao catálogo
+      <button
+        type="button"
+        className="back-button"
+        onClick={onBack}
+      >
+        ← Voltar ao catálogo
       </button>
 
-      <section className="details-layout">
+      <div className="details-layout">
         <div className="details-poster">
           {movie.url_poster ? (
             <img
@@ -97,15 +109,23 @@ function MovieDetails({
         </div>
 
         <div className="details-content">
-          <p className="eyebrow">DETALHES DO FILME</p>
+          <p className="eyebrow">ROCKETLAB · ADMIN</p>
+
           <h1>{movie.titulo}</h1>
 
-          <p className="details-meta">
-            {movie.ano_lancamento ?? "Ano desconhecido"}
-            {movie.duracao_minutos
-              ? ` · ${movie.duracao_minutos} min`
-              : ""}
-          </p>
+          <div className="details-meta">
+            <span>
+              {movie.ano_lancamento ?? "Ano desconhecido"}
+            </span>
+
+            {movie.duracao_minutos && (
+              <span>{movie.duracao_minutos} min</span>
+            )}
+
+            {movie.status_filme && (
+              <span>{movie.status_filme}</span>
+            )}
+          </div>
 
           <div className="genre-list">
             {movie.genres.map((genre) => (
@@ -118,8 +138,8 @@ function MovieDetails({
           <div className="rating-summary">
             <strong>
               {movie.nota_media !== null
-                ? `★ ${movie.nota_media.toFixed(1)} / 5`
-                : "Ainda sem avaliações"}
+                ? `${movie.nota_media.toFixed(1)} / 5 ★`
+                : "Ainda sem nota"}
             </strong>
 
             <span>
@@ -127,28 +147,41 @@ function MovieDetails({
             </span>
           </div>
 
-          <h2>Sinopse</h2>
-          <p className="details-synopsis">
-            {movie.sinopse || "Sinopse indisponível."}
-          </p>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={onEdit}
+          >
+            Editar filme
+          </button>
 
-          <h2>Direção</h2>
-          <p>
-            {directors.length > 0
-              ? directors
-                  .map((director) => director.nome_pessoa)
-                  .join(", ")
-              : "Não informada"}
-          </p>
+          <section className="details-synopsis">
+            <h2>Sinopse</h2>
+            <p>
+              {movie.sinopse || "Sinopse indisponível."}
+            </p>
+          </section>
+
+          <section>
+            <h2>Direção</h2>
+
+            <p>
+              {directors.length > 0
+                ? directors
+                    .map((director) => director.nome_pessoa)
+                    .join(", ")
+                : "Diretor não informado."}
+            </p>
+          </section>
 
           {movie.companies.length > 0 && (
-            <>
+            <section>
               <h2>Produtoras</h2>
               <p>{movie.companies.join(", ")}</p>
-            </>
+            </section>
           )}
         </div>
-      </section>
+      </div>
 
       <section className="reviews-section">
         <h2>Avaliações</h2>
@@ -164,16 +197,21 @@ function MovieDetails({
               >
                 <div className="review-header">
                   <strong>{review.nome}</strong>
-                  <span>★ {review.nota.toFixed(1)} / 5</span>
+
+                  <span>
+                    {review.nota.toFixed(1)} / 5 ★
+                  </span>
                 </div>
 
                 <p>{review.comentario}</p>
 
-                <small>
-                  {new Date(
-                    review.created_at
-                  ).toLocaleDateString("pt-BR")}
-                </small>
+                {review.created_at && (
+                  <small>
+                    {new Date(
+                      review.created_at
+                    ).toLocaleDateString("pt-BR")}
+                  </small>
+                )}
               </article>
             ))}
           </div>

@@ -110,3 +110,29 @@ export async function createMovie(
 
   return response.json();
 }
+
+export type MovieUpdate = Partial<MovieCreate>;
+
+export async function updateMovie(
+  movieId: string,
+  data: MovieUpdate
+): Promise<MovieDetail> {
+  const response = await fetch(
+    `${API_URL}/movies/${encodeURIComponent(movieId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Não foi possível atualizar o filme (HTTP ${response.status}).`
+    );
+  }
+
+  return response.json();
+}

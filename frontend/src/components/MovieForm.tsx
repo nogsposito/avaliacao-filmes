@@ -5,28 +5,54 @@ import GenreInput from "./GenreInput";
 
 import {
   createMovie,
+  updateMovie,
   type MovieCreate,
   type MovieDetail,
 } from "../services/movies";
 
 interface MovieFormProps {
   onCancel: () => void;
-  onCreated: (movie: MovieDetail) => void;
+  onSaved: (movie: MovieDetail) => void;
+  movie?: MovieDetail;
 }
 
-function MovieForm({ onCancel, onCreated }: MovieFormProps) {
-  const [titulo, setTitulo] = useState("");
-  const [diretor, setDiretor] = useState("");
-  const [ano, setAno] = useState("");
-  const [generos, setGeneros] = useState<string[]>([]);
-  const [sinopse, setSinopse] = useState("");
-  const [duracao, setDuracao] = useState("");
-  const [poster, setPoster] = useState("");
+function MovieForm({
+  onCancel,
+  onSaved,
+  movie,
+}: MovieFormProps) {
+  const editing = Boolean(movie);
+
+  const directors = movie?.people.filter(
+    (person) => person.tipo_pessoa === "Diretor"
+  );
+
+  const [titulo, setTitulo] = useState(movie?.titulo ?? "");
+  const [diretor, setDiretor] = useState(
+    directors?.[0]?.nome_pessoa ?? ""
+  );
+  const [ano, setAno] = useState(
+    movie?.ano_lancamento?.toString() ?? ""
+  );
+  const [generos, setGeneros] = useState<string[]>(
+    movie?.genres ?? []
+  );
+  const [sinopse, setSinopse] = useState(
+    movie?.sinopse ?? ""
+  );
+  const [duracao, setDuracao] = useState(
+    movie?.duracao_minutos?.toString() ?? ""
+  );
+  const [poster, setPoster] = useState(
+    movie?.url_poster ?? ""
+  );
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
     setError("");
 
@@ -48,13 +74,16 @@ function MovieForm({ onCancel, onCreated }: MovieFormProps) {
     setSaving(true);
 
     try {
-      const movie = await createMovie(data);
-      onCreated(movie);
+      const savedMovie = movie
+        ? await updateMovie(movie.sk_movie_id, data)
+        : await createMovie(data);
+
+      onSaved(savedMovie);
     } catch (error) {
       setError(
         error instanceof Error
           ? error.message
-          : "Não foi possível cadastrar o filme."
+          : "Não foi possível salvar o filme."
       );
     } finally {
       setSaving(false);
@@ -68,14 +97,20 @@ function MovieForm({ onCancel, onCreated }: MovieFormProps) {
         className="back-button"
         onClick={onCancel}
       >
-        Voltar ao catálogo
+        ← Voltar
       </button>
 
       <div className="form-heading">
-        <p className="eyebrow">ADMIN</p>
-        <h1>Novo filme</h1>
+        <p className="eyebrow">ROCKETLAB · ADMIN</p>
+
+        <h1>
+          {editing ? "Editar filme" : "Novo filme"}
+        </h1>
+
         <p className="subtitle">
-          Preencha as informações para adicionar um filme ao catálogo.
+          {editing
+            ? "Atualize as informações do filme."
+            : "Preencha as informações para adicionar um filme."}
         </p>
       </div>
 
@@ -86,7 +121,9 @@ function MovieForm({ onCancel, onCreated }: MovieFormProps) {
             required
             maxLength={500}
             value={titulo}
-            onChange={(event) => setTitulo(event.target.value)}
+            onChange={(event) =>
+              setTitulo(event.target.value)
+            }
             placeholder="Ex.: Central do Brasil"
           />
         </label>
@@ -98,7 +135,9 @@ function MovieForm({ onCancel, onCreated }: MovieFormProps) {
               required
               maxLength={255}
               value={diretor}
-              onChange={(event) => setDiretor(event.target.value)}
+              onChange={(event) =>
+                setDiretor(event.target.value)
+              }
               placeholder="Ex.: Walter Salles"
             />
           </label>
@@ -111,7 +150,9 @@ function MovieForm({ onCancel, onCreated }: MovieFormProps) {
               min={1888}
               max={2100}
               value={ano}
-              onChange={(event) => setAno(event.target.value)}
+              onChange={(event) =>
+                setAno(event.target.value)
+              }
               placeholder="1998"
             />
           </label>
@@ -128,7 +169,9 @@ function MovieForm({ onCancel, onCreated }: MovieFormProps) {
             rows={5}
             maxLength={4000}
             value={sinopse}
-            onChange={(event) => setSinopse(event.target.value)}
+            onChange={(event) =>
+              setSinopse(event.target.value)
+            }
             placeholder="Descreva o filme..."
           />
         </label>
@@ -140,7 +183,9 @@ function MovieForm({ onCancel, onCreated }: MovieFormProps) {
               type="number"
               min={1}
               value={duracao}
-              onChange={(event) => setDuracao(event.target.value)}
+              onChange={(event) =>
+                setDuracao(event.target.value)
+              }
               placeholder="113"
             />
           </label>
@@ -150,7 +195,9 @@ function MovieForm({ onCancel, onCreated }: MovieFormProps) {
             <input
               type="url"
               value={poster}
-              onChange={(event) => setPoster(event.target.value)}
+              onChange={(event) =>
+                setPoster(event.target.value)
+              }
               placeholder="https://..."
             />
           </label>
@@ -177,7 +224,11 @@ function MovieForm({ onCancel, onCreated }: MovieFormProps) {
             className="primary-button"
             disabled={saving}
           >
-            {saving ? "Salvando..." : "Cadastrar filme"}
+            {saving
+              ? "Salvando..."
+              : editing
+                ? "Salvar alterações"
+                : "Cadastrar filme"}
           </button>
         </div>
       </form>
