@@ -281,6 +281,7 @@ async def update_movie(
             selectinload(DimMovie.genres),
             selectinload(DimMovie.companies),
             selectinload(DimMovie.people),
+            selectinload(DimMovie.reviews),
         )
         .where(DimMovie.sk_movie_id == movie_id)
     )

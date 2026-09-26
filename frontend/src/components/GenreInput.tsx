@@ -1,80 +1,191 @@
 
 import { useState, type KeyboardEvent } from "react";
 
+const GENRES = [
+  "Ação",
+  "Aventura",
+  "Animação",
+  "Comédia",
+  "Crime",
+  "Documentário",
+  "Drama",
+  "Família",
+  "Fantasia",
+  "Ficção científica",
+  "Guerra",
+  "História",
+  "Mistério",
+  "Musical",
+  "Romance",
+  "Suspense",
+  "Terror",
+  "Faroeste",
+];
+
 interface GenreInputProps {
   value: string[];
   onChange: (genres: string[]) => void;
 }
 
-function GenreInput({ value, onChange }: GenreInputProps) {
-  const [input, setInput] = useState("");
+function GenreInput({
+  value,
+  onChange,
+}: GenreInputProps) {
+  const [newGenre, setNewGenre] = useState("");
+  const [error, setError] = useState("");
 
-  function addGenre() {
-    const genre = input.trim();
+  function normalizeGenre(genre: string) {
+    return genre.trim().toLocaleLowerCase("pt-BR");
+  }
 
-    if (!genre) return;
+  const availableGenres = [
+    ...GENRES,
+    ...value.filter(
+      (genre) =>
+        !GENRES.some(
+          (existing) =>
+            normalizeGenre(existing) === normalizeGenre(genre)
+        )
+    ),
+  ];
 
-    const exists = value.some(
-      (item) => item.toLowerCase() === genre.toLowerCase()
+  function toggleGenre(genre: string) {
+    const selected = value.some(
+      (item) =>
+        normalizeGenre(item) === normalizeGenre(genre)
     );
 
-    if (!exists) {
+    if (selected) {
+      onChange(
+        value.filter(
+          (item) =>
+            normalizeGenre(item) !== normalizeGenre(genre)
+        )
+      );
+    } else {
       onChange([...value, genre]);
     }
 
-    setInput("");
+    setError("");
   }
 
-  function removeGenre(genre: string) {
-    onChange(value.filter((item) => item !== genre));
-  }
+  function addGenre() {
+    setError("");
 
-  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter" || event.key === ",") {
-      event.preventDefault();
-      addGenre();
+    const genre = newGenre.trim();
+
+    if (!genre) return;
+
+    const existingGenre = availableGenres.find(
+      (item) =>
+        normalizeGenre(item) === normalizeGenre(genre)
+    );
+
+    const genreToAdd = existingGenre ?? genre;
+
+    const alreadySelected = value.some(
+      (item) =>
+        normalizeGenre(item) === normalizeGenre(genreToAdd)
+    );
+
+    if (alreadySelected) {
+      setError("Esse gênero já está selecionado.");
+      return;
     }
 
-    if (
-      event.key === "Backspace" &&
-      input === "" &&
-      value.length > 0
-    ) {
-      removeGenre(value[value.length - 1]);
+    onChange([...value, genreToAdd]);
+    setNewGenre("");
+  }
+
+  function handleKeyDown(
+    event: KeyboardEvent<HTMLInputElement>
+  ) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      addGenre();
     }
   }
 
   return (
-    <div className="genre-field">
-      <label htmlFor="genre-input">Gêneros *</label>
+    <fieldset className="genre-field">
+      <legend>Gêneros *</legend>
 
-      <div className="genre-input-container">
-        {value.map((genre) => (
-          <span className="genre-chip" key={genre}>
-            {genre}
+      <p className="genre-hint">
+        Selecione gêneros existentes ou crie um novo.
+      </p>
 
+      <div className="genre-options">
+        {availableGenres.map((genre) => {
+          const selected = value.some(
+            (item) =>
+              normalizeGenre(item) === normalizeGenre(genre)
+          );
+
+          return (
             <button
+              key={genre}
               type="button"
-              onClick={() => removeGenre(genre)}
-              aria-label={`Remover ${genre}`}
+              className={
+                selected
+                  ? "genre-option selected"
+                  : "genre-option"
+              }
+              onClick={() => toggleGenre(genre)}
+              aria-pressed={selected}
             >
-              ×
+              {selected ? "✓ " : ""}
+              {genre}
             </button>
-          </span>
-        ))}
-
-        <input
-          id="genre-input"
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Digite um gênero..."
-          maxLength={50}
-        />
+          );
+        })}
       </div>
 
-      <small>Pressione Enter para adicionar um gênero.</small>
-    </div>
+      <div className="custom-genre">
+        <label htmlFor="new-genre">
+          Não encontrou o gênero?
+        </label>
+
+        <div className="custom-genre-row">
+          <input
+            id="new-genre"
+            type="text"
+            value={newGenre}
+            onChange={(event) => {
+              setNewGenre(event.target.value);
+              setError("");
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder="Digite um novo gênero..."
+            maxLength={50}
+          />
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={addGenre}
+            disabled={!newGenre.trim()}
+          >
+            + Adicionar
+          </button>
+        </div>
+
+        {error && (
+          <small className="error" role="alert">
+            {error}
+          </small>
+        )}
+
+        <small>
+          Pressione Enter ou clique em Adicionar.
+        </small>
+      </div>
+
+      {value.length > 0 && (
+        <p className="genre-selected">
+          Selecionados: {value.join(", ")}
+        </p>
+      )}
+    </fieldset>
   );
 }
 
