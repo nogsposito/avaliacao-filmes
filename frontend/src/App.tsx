@@ -1,10 +1,12 @@
 
 import { useEffect, useState } from "react";
 
+import DeleteMovieDialog from "./components/DeleteMovieDialog";
 import MovieDetails from "./components/MovieDetails";
 import MovieForm from "./components/MovieForm";
 
 import {
+  deleteMovie,
   getMovie,
   getMovies,
   type Movie,
@@ -15,10 +17,14 @@ import "./App.css";
 
 function App() {
   const [movies, setMovies] = useState<Movie[]>([]);
+
   const [selectedMovieId, setSelectedMovieId] =
     useState<string | null>(null);
 
   const [editingMovie, setEditingMovie] =
+    useState<MovieDetail | null>(null);
+
+  const [movieToDelete, setMovieToDelete] =
     useState<MovieDetail | null>(null);
 
   const [showCreateForm, setShowCreateForm] =
@@ -28,8 +34,13 @@ function App() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -89,6 +100,46 @@ function App() {
     setRefreshKey((value) => value + 1);
   }
 
+  function openDeleteDialog(movie: MovieDetail) {
+    setMovieToDelete(movie);
+    setDeleteError("");
+  }
+
+  function closeDeleteDialog() {
+    if (deleting) return;
+
+    setMovieToDelete(null);
+    setDeleteError("");
+  }
+
+  async function handleDelete() {
+    if (!movieToDelete || deleting) return;
+
+    setDeleting(true);
+    setDeleteError("");
+
+    try {
+      await deleteMovie(movieToDelete.sk_movie_id);
+
+      setMovieToDelete(null);
+      setSelectedMovieId(null);
+
+      if (page !== 1) {
+        setPage(1);
+      } else {
+        setRefreshKey((value) => value + 1);
+      }
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível excluir o filme."
+      );
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   if (editingMovie) {
     return (
       <MovieForm
@@ -111,12 +162,25 @@ function App() {
 
   if (selectedMovieId) {
     return (
-      <MovieDetails
-        key={refreshKey}
-        movieId={selectedMovieId}
-        onBack={() => setSelectedMovieId(null)}
-        onEdit={() => handleEdit(selectedMovieId)}
-      />
+      <>
+        <MovieDetails
+          key={refreshKey}
+          movieId={selectedMovieId}
+          onBack={() => setSelectedMovieId(null)}
+          onEdit={() => handleEdit(selectedMovieId)}
+          onDelete={openDeleteDialog}
+        />
+
+        {movieToDelete && (
+          <DeleteMovieDialog
+            movieTitle={movieToDelete.titulo}
+            deleting={deleting}
+            error={deleteError}
+            onCancel={closeDeleteDialog}
+            onConfirm={handleDelete}
+          />
+        )}
+      </>
     );
   }
 
@@ -132,6 +196,7 @@ function App() {
         </div>
 
         <button
+          type="button"
           className="primary-button"
           onClick={() => setShowCreateForm(true)}
         >
@@ -155,7 +220,11 @@ function App() {
 
       {loading && <p>Carregando filmes...</p>}
 
-      {error && <p className="error">{error}</p>}
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
 
       {!loading && !error && movies.length === 0 && (
         <p>Nenhum filme encontrado.</p>
@@ -186,10 +255,12 @@ function App() {
 
               <div className="movie-info">
                 <h2>{movie.titulo}</h2>
+
                 <p>
                   {movie.ano_lancamento ??
                     "Ano desconhecido"}
                 </p>
+
                 <p className="synopsis">
                   {movie.sinopse ||
                     "Sinopse indisponível."}
@@ -203,6 +274,7 @@ function App() {
       {!loading && !error && totalPages > 1 && (
         <nav className="pagination">
           <button
+            type="button"
             disabled={page === 1}
             onClick={() => setPage(page - 1)}
           >
@@ -214,6 +286,7 @@ function App() {
           </span>
 
           <button
+            type="button"
             disabled={page >= totalPages}
             onClick={() => setPage(page + 1)}
           >

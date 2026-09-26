@@ -6,17 +6,21 @@ import {
   type MovieDetail,
 } from "../services/movies";
 
+
 interface MovieDetailsProps {
   movieId: string;
   onBack: () => void;
   onEdit: () => void;
+  onDelete: (movie: MovieDetail) => void;
 }
 
 function MovieDetails({
   movieId,
   onBack,
   onEdit,
+  onDelete,
 }: MovieDetailsProps) {
+
   const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -146,14 +150,24 @@ function MovieDetails({
               {movie.total_avaliacoes} avaliações
             </span>
           </div>
+          
+          <div className="movie-actions">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={onEdit}
+            >
+              Editar filme
+            </button>
 
-          <button
-            type="button"
-            className="primary-button"
-            onClick={onEdit}
-          >
-            Editar filme
-          </button>
+            <button
+              type="button"
+              className="danger-button"
+              onClick={() => onDelete(movie)}
+            >
+              Excluir filme
+            </button>
+          </div>
 
           <section className="details-synopsis">
             <h2>Sinopse</h2>

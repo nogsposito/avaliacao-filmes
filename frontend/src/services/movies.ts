@@ -136,3 +136,19 @@ export async function updateMovie(
 
   return response.json();
 }
+
+
+export async function deleteMovie(movieId: string): Promise<void> {
+  const response = await fetch(
+    `${API_URL}/movies/${encodeURIComponent(movieId)}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Não foi possível excluir o filme (HTTP ${response.status}).`
+    );
+  }
+}

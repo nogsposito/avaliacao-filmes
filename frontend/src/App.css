@@ -406,3 +406,64 @@ h1 {
   margin-left: 12px;
   color: #aaa;
 }
+
+
+.movie-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.danger-button {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #b42318;
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.danger-button:hover:not(:disabled) {
+  background: #912018;
+}
+
+.danger-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.delete-dialog {
+  width: 100%;
+  max-width: 460px;
+  padding: 28px;
+  border-radius: 12px;
+  background: white;
+  color: #222;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.delete-dialog h2 {
+  margin: 0 0 12px;
+}
+
+.delete-dialog p {
+  line-height: 1.6;
+}
+
+.delete-dialog .form-actions {
+  margin-top: 24px;
+}
