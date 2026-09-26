@@ -12,7 +12,7 @@ from app.db.session import get_db
 from app.main import app
 from app.movies import models
 
-
+# Configuração do pytest para testes assíncronos
 @pytest.fixture
 async def client():
     test_engine = create_async_engine(

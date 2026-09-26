@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import DeleteMovieDialog from "./components/DeleteMovieDialog";
 import MovieDetails from "./components/MovieDetails";
 import MovieForm from "./components/MovieForm";
+import MovieLoader from "./components/MovieLoader";
 
 import {
   deleteMovie,
@@ -218,7 +219,7 @@ function App() {
         <span>{total} filmes encontrados</span>
       </section>
 
-      {loading && <p>Carregando filmes...</p>}
+      {loading && <MovieLoader />}
 
       {error && (
         <p className="error" role="alert">

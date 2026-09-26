@@ -8,6 +8,9 @@ import {
   type MovieDetail,
 } from "../services/movies";
 
+import { formatRating } from "../utils/ratings";
+import MovieLoader from "./MovieLoader";
+
 interface MovieDetailsProps {
   movieId: string;
   onBack: () => void;
@@ -68,7 +71,7 @@ function MovieDetails({
   if (loading) {
     return (
       <main className="container">
-        <p>Carregando filme...</p>
+        <MovieLoader />
       </main>
     );
   }
@@ -157,7 +160,7 @@ function MovieDetails({
           <div className="rating-summary">
             <strong>
               {movie.nota_media !== null
-                ? `${movie.nota_media.toFixed(1)} / 5 ★`
+                ? `${formatRating(movie.nota_media)} ★`
                 : "Ainda sem nota"}
             </strong>
 
@@ -169,9 +172,11 @@ function MovieDetails({
           <div className="movie-actions">
             <button
               type="button"
-              className="primary-button"
+              className="secondary-button"
               onClick={onEdit}
+              title="Editar informações do filme"
             >
+              <span aria-hidden="true">✎</span>
               Editar filme
             </button>
 
@@ -179,8 +184,10 @@ function MovieDetails({
               type="button"
               className="danger-button"
               onClick={() => onDelete(movie)}
+              title="Excluir filme do catálogo"
             >
-              Excluir filme
+              <span aria-hidden="true">⌫</span>
+              Excluir
             </button>
           </div>
 
