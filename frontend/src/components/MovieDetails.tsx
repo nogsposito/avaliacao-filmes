@@ -1,11 +1,12 @@
 
 import { useEffect, useState } from "react";
 
+import ReviewForm from "./ReviewForm";
+
 import {
   getMovie,
   type MovieDetail,
 } from "../services/movies";
-
 
 interface MovieDetailsProps {
   movieId: string;
@@ -20,10 +21,14 @@ function MovieDetails({
   onEdit,
   onDelete,
 }: MovieDetailsProps) {
+  const [movie, setMovie] =
+    useState<MovieDetail | null>(null);
 
-  const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [reviewsRefreshKey, setReviewsRefreshKey] =
+    useState(0);
 
   useEffect(() => {
     let active = true;
@@ -58,7 +63,7 @@ function MovieDetails({
     return () => {
       active = false;
     };
-  }, [movieId]);
+  }, [movieId, reviewsRefreshKey]);
 
   if (loading) {
     return (
@@ -113,27 +118,37 @@ function MovieDetails({
         </div>
 
         <div className="details-content">
-          <p className="eyebrow">ROCKETLAB · ADMIN</p>
+          <p className="eyebrow">
+            ROCKETLAB · ADMIN
+          </p>
 
           <h1>{movie.titulo}</h1>
 
           <div className="details-meta">
             <span>
-              {movie.ano_lancamento ?? "Ano desconhecido"}
+              {movie.ano_lancamento ??
+                "Ano desconhecido"}
             </span>
 
             {movie.duracao_minutos && (
-              <span>{movie.duracao_minutos} min</span>
+              <span>
+                {movie.duracao_minutos} min
+              </span>
             )}
 
             {movie.status_filme && (
-              <span>{movie.status_filme}</span>
+              <span>
+                {movie.status_filme}
+              </span>
             )}
           </div>
 
           <div className="genre-list">
             {movie.genres.map((genre) => (
-              <span className="genre-tag" key={genre}>
+              <span
+                className="genre-tag"
+                key={genre}
+              >
                 {genre}
               </span>
             ))}
@@ -150,7 +165,7 @@ function MovieDetails({
               {movie.total_avaliacoes} avaliações
             </span>
           </div>
-          
+
           <div className="movie-actions">
             <button
               type="button"
@@ -171,8 +186,10 @@ function MovieDetails({
 
           <section className="details-synopsis">
             <h2>Sinopse</h2>
+
             <p>
-              {movie.sinopse || "Sinopse indisponível."}
+              {movie.sinopse ||
+                "Sinopse indisponível."}
             </p>
           </section>
 
@@ -182,7 +199,10 @@ function MovieDetails({
             <p>
               {directors.length > 0
                 ? directors
-                    .map((director) => director.nome_pessoa)
+                    .map(
+                      (director) =>
+                        director.nome_pessoa
+                    )
                     .join(", ")
                 : "Diretor não informado."}
             </p>
@@ -191,7 +211,10 @@ function MovieDetails({
           {movie.companies.length > 0 && (
             <section>
               <h2>Produtoras</h2>
-              <p>{movie.companies.join(", ")}</p>
+
+              <p>
+                {movie.companies.join(", ")}
+              </p>
             </section>
           )}
         </div>
@@ -200,24 +223,40 @@ function MovieDetails({
       <section className="reviews-section">
         <h2>Avaliações</h2>
 
-        {movie.reviews.length === 0 ? (
-          <p>Este filme ainda não possui avaliações.</p>
-        ) : (
-          <div className="reviews-list">
-            {movie.reviews.map((review) => (
+        <ReviewForm
+          movieId={movie.sk_movie_id}
+          onCreated={() =>
+            setReviewsRefreshKey(
+              (value) => value + 1
+            )
+          }
+        />
+
+        <div className="reviews-list">
+          {movie.reviews.length === 0 ? (
+            <p>
+              Este filme ainda não possui avaliações.
+            </p>
+          ) : (
+            movie.reviews.map((review) => (
               <article
                 className="review-card"
                 key={review.sk_movie_review_id}
               >
                 <div className="review-header">
-                  <strong>{review.nome}</strong>
+                  <strong>
+                    {review.nome}
+                  </strong>
 
                   <span>
-                    {review.nota.toFixed(1)} / 5 ★
+                    {review.nota.toFixed(1)}
+                    {" / 5 ★"}
                   </span>
                 </div>
 
-                <p>{review.comentario}</p>
+                <p>
+                  {review.comentario}
+                </p>
 
                 {review.created_at && (
                   <small>
@@ -227,9 +266,9 @@ function MovieDetails({
                   </small>
                 )}
               </article>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </section>
     </main>
   );

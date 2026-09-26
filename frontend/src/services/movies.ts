@@ -152,3 +152,34 @@ export async function deleteMovie(movieId: string): Promise<void> {
     );
   }
 }
+
+
+export interface ReviewCreate {
+  nome: string;
+  nota: number;
+  comentario: string;
+}
+
+export async function createReview(
+  movieId: string,
+  data: ReviewCreate
+): Promise<Review> {
+  const response = await fetch(
+    `${API_URL}/movies/${encodeURIComponent(movieId)}/reviews`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Não foi possível publicar a avaliação (HTTP ${response.status}).`
+    );
+  }
+
+  return response.json();
+}
