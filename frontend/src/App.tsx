@@ -1,10 +1,16 @@
 
 import { useEffect, useState } from "react";
+
+import MovieDetails from "./components/MovieDetails";
 import { getMovies, type Movie } from "./services/movies";
+
 import "./App.css";
 
 function App() {
   const [movies, setMovies] = useState<Movie[]>([]);
+  const [selectedMovieId, setSelectedMovieId] = useState<string | null>(
+    null
+  );
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -27,9 +33,13 @@ function App() {
         setMovies(data.items);
         setTotalPages(data.total_pages);
         setTotal(data.total);
-      } catch {
+      } catch (error) {
         if (active) {
-          setError("Erro ao carregar os filmes.");
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Erro ao carregar os filmes."
+          );
         }
       } finally {
         if (active) {
@@ -45,11 +55,20 @@ function App() {
     };
   }, [page, search]);
 
+  if (selectedMovieId) {
+    return (
+      <MovieDetails
+        movieId={selectedMovieId}
+        onBack={() => setSelectedMovieId(null)}
+      />
+    );
+  }
+
   return (
     <main className="container">
       <header className="header">
         <div>
-          <p className="eyebrow">ROCKETLAB · ADMIN</p>
+          <p className="eyebrow">ADMIN</p>
           <h1>Catálogo de filmes</h1>
           <p className="subtitle">
             Consulte e gerencie os filmes cadastrados.
@@ -86,9 +105,11 @@ function App() {
       {!loading && !error && (
         <section className="movie-grid">
           {movies.map((movie) => (
-            <article
+            <button
+              type="button"
               className="movie-card"
               key={movie.sk_movie_id}
+              onClick={() => setSelectedMovieId(movie.sk_movie_id)}
             >
               <div className="poster">
                 {movie.url_poster ? (
@@ -111,7 +132,7 @@ function App() {
                   {movie.sinopse || "Sinopse indisponível."}
                 </p>
               </div>
-            </article>
+            </button>
           ))}
         </section>
       )}

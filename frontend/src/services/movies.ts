@@ -18,6 +18,33 @@ export interface PaginatedMovies {
   total_pages: number;
 }
 
+export interface Person {
+  sk_person_id: string;
+  nome_pessoa: string;
+  tipo_pessoa: string;
+}
+
+export interface Review {
+  sk_movie_review_id: string;
+  sk_movie_id: string;
+  nome: string;
+  nota: number;
+  comentario: string;
+  created_at: string;
+}
+
+export interface MovieDetail extends Movie {
+  duracao_minutos: number | null;
+  status_filme: string | null;
+  url_backdrop: string | null;
+  genres: string[];
+  companies: string[];
+  people: Person[];
+  reviews: Review[];
+  total_avaliacoes: number;
+  nota_media: number | null;
+}
+
 export async function getMovies(
   page = 1,
   pageSize = 12,
@@ -35,6 +62,20 @@ export async function getMovies(
 
   if (!response.ok) {
     throw new Error("Não foi possível carregar os filmes.");
+  }
+
+  return response.json();
+}
+
+export async function getMovie(
+  movieId: string
+): Promise<MovieDetail> {
+  const response = await fetch(
+    `${API_URL}/movies/${encodeURIComponent(movieId)}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Não foi possível carregar os detalhes do filme.");
   }
 
   return response.json();
