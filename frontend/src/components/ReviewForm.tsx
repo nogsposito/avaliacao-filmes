@@ -1,6 +1,11 @@
 
-import { useState, type FormEvent } from "react";
+import {
+  useState,
+  type FormEvent,
+  type MouseEvent,
+} from "react";
 
+import { useAuth } from "../auth/AuthContext";
 import {
   createReview,
   type ReviewCreate,
@@ -15,13 +20,28 @@ function ReviewForm({
   movieId,
   onCreated,
 }: ReviewFormProps) {
-  const [nome, setNome] = useState("");
-  const [nota, setNota] = useState(0);
-  const [comentario, setComentario] = useState("");
+  const { user, token } = useAuth();
 
+  const [nota, setNota] = useState(0);
+  const [hoverNota, setHoverNota] = useState<number | null>(null);
+  const [comentario, setComentario] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const notaExibida = hoverNota ?? nota;
+
+  function getStarRating(
+    event: MouseEvent<HTMLButtonElement>,
+    star: number
+  ): number {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+
+    return mouseX < rect.width / 2
+      ? star - 0.5
+      : star;
+  }
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
@@ -30,18 +50,22 @@ function ReviewForm({
     setError("");
     setSuccess("");
 
-    if (nota < 1 || nota > 5) {
-      setError("Selecione uma nota de 1 a 5 estrelas.");
+    if (!token) {
+      setError("Entre na sua conta para avaliar este filme.");
       return;
     }
 
-    if (!nome.trim() || !comentario.trim()) {
-      setError("Preencha seu nome e o comentário.");
+    if (nota < 0.5 || nota > 5) {
+      setError("Selecione uma nota de 0,5 a 5 estrelas.");
+      return;
+    }
+
+    if (!comentario.trim()) {
+      setError("Escreva um comentário.");
       return;
     }
 
     const data: ReviewCreate = {
-      nome: nome.trim(),
       nota,
       comentario: comentario.trim(),
     };
@@ -49,18 +73,17 @@ function ReviewForm({
     setSaving(true);
 
     try {
-      await createReview(movieId, data);
+      await createReview(movieId, data, token);
 
-      setNome("");
       setNota(0);
+      setHoverNota(null);
       setComentario("");
       setSuccess("Avaliação publicada com sucesso!");
-
       onCreated();
-    } catch (error) {
+    } catch (err) {
       setError(
-        error instanceof Error
-          ? error.message
+        err instanceof Error
+          ? err.message
           : "Não foi possível publicar a avaliação."
       );
     } finally {
@@ -68,59 +91,104 @@ function ReviewForm({
     }
   }
 
+  if (!user || !token) {
+    return (
+      <div className="review-form">
+        <h3>Escrever avaliação</h3>
+        <p>Entre na sua conta para avaliar este filme.</p>
+      </div>
+    );
+  }
+
   return (
-    <form
-      className="review-form"
-      onSubmit={handleSubmit}
-    >
+    <form className="review-form" onSubmit={handleSubmit}>
       <h3>Escrever avaliação</h3>
 
-      <label>
-        Seu nome *
-        <input
-          required
-          maxLength={120}
-          value={nome}
-          onChange={(event) =>
-            setNome(event.target.value)
-          }
-          placeholder="Como você gostaria de ser identificado?"
-        />
-      </label>
+      <p className="review-author">
+        Avaliando como <strong>{user.username}</strong>
+      </p>
 
       <div className="rating-field">
-        <span className="rating-label">
-          Sua nota *
-        </span>
+        <span className="rating-label">Sua nota *</span>
 
         <div
           className="star-input"
           role="group"
           aria-label="Selecione sua nota"
+          onMouseLeave={() => setHoverNota(null)}
         >
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              className={
-                star <= nota
-                  ? "star-button selected"
-                  : "star-button"
-              }
-              onClick={() => setNota(star)}
-              aria-label={`${star} estrelas`}
-              aria-pressed={nota === star}
-              disabled={saving}
-            >
-              {star <= nota ? "★" : "☆"}
-            </button>
-          ))}
+          {[1, 2, 3, 4, 5].map((star) => {
+            const preenchimento =
+              Math.max(
+                0,
+                Math.min(1, notaExibida - (star - 1))
+              ) * 100;
+
+            return (
+              <button
+                key={star}
+                type="button"
+                className="star-button"
+                disabled={saving}
+                onMouseMove={(event) => {
+                  setHoverNota(
+                    getStarRating(event, star)
+                  );
+                }}
+                onClick={(event) => {
+                  setNota(
+                    getStarRating(event, star)
+                  );
+                }}
+                onFocus={() => setHoverNota(null)}
+                onKeyDown={(event) => {
+                  if (
+                    event.key === "ArrowRight" ||
+                    event.key === "ArrowUp"
+                  ) {
+                    event.preventDefault();
+                    setNota((value) =>
+                      Math.min(5, value + 0.5)
+                    );
+                  }
+
+                  if (
+                    event.key === "ArrowLeft" ||
+                    event.key === "ArrowDown"
+                  ) {
+                    event.preventDefault();
+                    setNota((value) =>
+                      Math.max(0.5, value - 0.5)
+                    );
+                  }
+                }}
+                aria-label={`${star}ª estrela`}
+                aria-pressed={
+                  nota === star ||
+                  nota === star - 0.5
+                }
+              >
+                <span
+                  className="star-fill"
+                  style={{
+                    backgroundImage: `linear-gradient(
+                      to right,
+                      #f47a31 ${preenchimento}%,
+                      #68716e ${preenchimento}%
+                    )`,
+                  }}
+                >
+                  ★
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         <small>
-          {nota === 0
-            ? "Selecione de 1 a 5 estrelas."
-            : `${nota} de 5 estrelas`}
+          {notaExibida === 0
+            ? "Selecione de 0,5 a 5 estrelas."
+            : `${notaExibida.toLocaleString("pt-BR")} de 5 estrelas`}
         </small>
       </div>
 

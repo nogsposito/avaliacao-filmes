@@ -5,6 +5,8 @@ import DeleteMovieDialog from "./components/DeleteMovieDialog";
 import MovieDetails from "./components/MovieDetails";
 import MovieForm from "./components/MovieForm";
 import MovieLoader from "./components/MovieLoader";
+import AuthPage from "./components/AuthPage";
+import { useAuth } from "./auth/AuthContext";
 
 import {
   deleteMovie,
@@ -43,6 +45,11 @@ function App() {
   const [deleteError, setDeleteError] = useState("");
 
   const [refreshKey, setRefreshKey] = useState(0);
+  
+  const { user, signOut } = useAuth();
+
+  const [showAuthPage, setShowAuthPage] = 
+    useState(false);
 
   useEffect(() => {
     let active = true;
@@ -141,6 +148,15 @@ function App() {
     }
   }
 
+  if (showAuthPage) {
+    return (
+      <AuthPage
+        onBack={() => setShowAuthPage(false)}
+        onSuccess={() => setShowAuthPage(false)}
+      />
+    );
+  }
+
   if (editingMovie) {
     return (
       <MovieForm
@@ -196,13 +212,39 @@ function App() {
           </p>
         </div>
 
-        <button
-          type="button"
-          className="primary-button"
-          onClick={() => setShowCreateForm(true)}
-        >
-          + Novo filme
-        </button>
+        <div className="header-actions">
+          {user ? (
+            <>
+              <span className="current-user">
+                Olá, {user.username}
+              </span>
+
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={signOut}
+              >
+                Sair
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setShowAuthPage(true)}
+            >
+              Entrar / Criar conta
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => setShowCreateForm(true)}
+          >
+            + Novo filme
+          </button>
+        </div>
       </header>
 
       <section className="toolbar">

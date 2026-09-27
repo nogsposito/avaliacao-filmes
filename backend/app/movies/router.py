@@ -6,6 +6,9 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.users.dependencies import get_current_user
+from app.users.models import User
+
 from app.db.session import get_db
 from app.movies.models import DimGenre, DimMovie, DimPerson, MovieReview
 from app.movies.schemas import (
@@ -371,8 +374,8 @@ async def create_review(
     movie_id: str,
     data: ReviewCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    # Confere se o filme existe.
     movie = await db.get(DimMovie, movie_id)
 
     if movie is None:
@@ -381,10 +384,10 @@ async def create_review(
             detail="Filme não encontrado",
         )
 
-    # Converte a nota de 1–5 para a escala de 0–10 do banco.
     review = MovieReview(
         sk_movie_id=movie_id,
-        nome=data.nome,
+        user_id=current_user.id,
+        nome=current_user.username,
         nota=data.nota * 2,
         comentario=data.comentario,
     )
@@ -394,6 +397,7 @@ async def create_review(
     await db.refresh(review)
 
     return format_review(review)
+
 
 
 # Converte a nota armazenada de 0–10 para a escala de 0–5.

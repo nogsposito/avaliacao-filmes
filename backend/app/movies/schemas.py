@@ -125,17 +125,16 @@ class MovieUpdate(BaseModel):
 
 # Schema para criação de uma avaliação de filme.
 class ReviewCreate(BaseModel):
-    nome: str = Field(min_length=1, max_length=120)
-    nota: float = Field(ge=1, le=5)
+    nota: float = Field(ge=0.5, le=5, multiple_of=0.5)
     comentario: str = Field(min_length=1, max_length=4000)
 
-    @field_validator("nome", "comentario")
+    @field_validator("comentario")
     @classmethod
-    def validar_texto(cls, value: str) -> str:
+    def validar_comentario(cls, value: str) -> str:
         value = value.strip()
 
         if not value:
-            raise ValueError("O campo não pode estar vazio")
+            raise ValueError("O comentário não pode estar vazio")
 
         return value
 

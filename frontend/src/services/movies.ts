@@ -155,14 +155,14 @@ export async function deleteMovie(movieId: string): Promise<void> {
 
 
 export interface ReviewCreate {
-  nome: string;
   nota: number;
   comentario: string;
 }
 
 export async function createReview(
   movieId: string,
-  data: ReviewCreate
+  data: ReviewCreate,
+  token: string
 ): Promise<Review> {
   const response = await fetch(
     `${API_URL}/movies/${encodeURIComponent(movieId)}/reviews`,
@@ -170,6 +170,7 @@ export async function createReview(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
     }
@@ -177,7 +178,9 @@ export async function createReview(
 
   if (!response.ok) {
     throw new Error(
-      `Não foi possível publicar a avaliação (HTTP ${response.status}).`
+      response.status === 401
+        ? "Sua sessão expirou. Entre novamente."
+        : `Não foi possível publicar a avaliação (HTTP ${response.status}).`
     );
   }
 
