@@ -10,6 +10,7 @@ from hashlib import sha256
 from typing import Literal
 from uuid import uuid4
 
+from app.users.models import User
 from sqlalchemy import (
     CheckConstraint,
     Column,
@@ -227,6 +228,19 @@ class MovieReview(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     movie: Mapped[DimMovie] = relationship(back_populates="reviews")
+
+    user_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
+    )
+
+    user: Mapped["User | None"] = relationship(
+        "User",
+        back_populates="reviews",
+    )
+
 
 
 class DimReview(Base):
