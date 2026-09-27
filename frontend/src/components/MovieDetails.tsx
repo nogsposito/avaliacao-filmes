@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 
 import ReviewForm from "./ReviewForm";
 
+import { useAuth } from "../auth/AuthContext";
+
 import {
   getMovie,
   type MovieDetail,
@@ -16,6 +18,8 @@ interface MovieDetailsProps {
   onBack: () => void;
   onEdit: () => void;
   onDelete: (movie: MovieDetail) => void;
+  onLogin: () => void;
+  onRegister: () => void;
 }
 
 function MovieDetails({
@@ -23,9 +27,13 @@ function MovieDetails({
   onBack,
   onEdit,
   onDelete,
+  onLogin,
+  onRegister,
 }: MovieDetailsProps) {
   const [movie, setMovie] =
     useState<MovieDetail | null>(null);
+
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -230,52 +238,44 @@ function MovieDetails({
       <section className="reviews-section">
         <h2>Avaliações</h2>
 
-        <ReviewForm
-          movieId={movie.sk_movie_id}
-          onCreated={() =>
-            setReviewsRefreshKey(
-              (value) => value + 1
-            )
-          }
-        />
+        {user ? (
+          <ReviewForm
+            movieId={movie.sk_movie_id}
+            onCreated={() =>
+              setReviewsRefreshKey((value) => value + 1)
+            }
+          />
+        ) : (
+          <div className="review-login-prompt">
+            <div className="review-login-icon">★</div>
 
-        <div className="reviews-list">
-          {movie.reviews.length === 0 ? (
-            <p>
-              Este filme ainda não possui avaliações.
-            </p>
-          ) : (
-            movie.reviews.map((review) => (
-              <article
-                className="review-card"
-                key={review.sk_movie_review_id}
+            <div className="review-login-copy">
+              <h3>O que você achou deste filme?</h3>
+              <p>
+                Entre na sua conta para dar uma nota e
+                compartilhar sua opinião.
+              </p>
+            </div>
+
+            <div className="review-login-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={onLogin}
               >
-                <div className="review-header">
-                  <strong>
-                    {review.nome}
-                  </strong>
+                Entrar para avaliar
+              </button>
 
-                  <span>
-                    {review.nota.toFixed(1)}
-                    {" / 5 ★"}
-                  </span>
-                </div>
-
-                <p>
-                  {review.comentario}
-                </p>
-
-                {review.created_at && (
-                  <small>
-                    {new Date(
-                      review.created_at
-                    ).toLocaleDateString("pt-BR")}
-                  </small>
-                )}
-              </article>
-            ))
-          )}
-        </div>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={onRegister}
+              >
+                Criar conta
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </main>
   );

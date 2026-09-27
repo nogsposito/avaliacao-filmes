@@ -1,12 +1,14 @@
 
 import { useEffect, useState } from "react";
 
+import { useAuth } from "./auth/AuthContext";
+
 import DeleteMovieDialog from "./components/DeleteMovieDialog";
+import LoginPage from "./components/LoginPage";
 import MovieDetails from "./components/MovieDetails";
 import MovieForm from "./components/MovieForm";
 import MovieLoader from "./components/MovieLoader";
-import AuthPage from "./components/AuthPage";
-import { useAuth } from "./auth/AuthContext";
+import RegisterPage from "./components/RegisterPage";
 
 import {
   deleteMovie,
@@ -18,7 +20,17 @@ import {
 
 import "./App.css";
 
+type AuthScreen = "login" | "register" | null;
+
 function App() {
+  const { user, loading: authLoading, signOut } = useAuth();
+
+  const [authScreen, setAuthScreen] =
+    useState<AuthScreen>(null);
+
+  const [accountMenuOpen, setAccountMenuOpen] =
+    useState(false);
+
   const [movies, setMovies] = useState<Movie[]>([]);
 
   const [selectedMovieId, setSelectedMovieId] =
@@ -45,11 +57,6 @@ function App() {
   const [deleteError, setDeleteError] = useState("");
 
   const [refreshKey, setRefreshKey] = useState(0);
-  
-  const { user, signOut } = useAuth();
-
-  const [showAuthPage, setShowAuthPage] = 
-    useState(false);
 
   useEffect(() => {
     let active = true;
@@ -66,11 +73,11 @@ function App() {
         setMovies(data.items);
         setTotalPages(data.total_pages);
         setTotal(data.total);
-      } catch (error) {
+      } catch (err) {
         if (active) {
           setError(
-            error instanceof Error
-              ? error.message
+            err instanceof Error
+              ? err.message
               : "Erro ao carregar os filmes."
           );
         }
@@ -92,10 +99,10 @@ function App() {
     try {
       const movie = await getMovie(movieId);
       setEditingMovie(movie);
-    } catch (error) {
+    } catch (err) {
       setError(
-        error instanceof Error
-          ? error.message
+        err instanceof Error
+          ? err.message
           : "Erro ao carregar o filme."
       );
     }
@@ -137,10 +144,10 @@ function App() {
       } else {
         setRefreshKey((value) => value + 1);
       }
-    } catch (error) {
+    } catch (err) {
       setDeleteError(
-        error instanceof Error
-          ? error.message
+        err instanceof Error
+          ? err.message
           : "Não foi possível excluir o filme."
       );
     } finally {
@@ -148,11 +155,47 @@ function App() {
     }
   }
 
-  if (showAuthPage) {
+  function handleAuthSuccess() {
+    setAuthScreen(null);
+    setAccountMenuOpen(false);
+  }
+
+  function handleSignOut() {
+    signOut();
+    setAccountMenuOpen(false);
+  }
+
+  function goToCatalog() {
+    setAuthScreen(null);
+    setSelectedMovieId(null);
+    setEditingMovie(null);
+    setShowCreateForm(false);
+  }
+
+  if (authLoading) {
     return (
-      <AuthPage
-        onBack={() => setShowAuthPage(false)}
-        onSuccess={() => setShowAuthPage(false)}
+      <main className="container">
+        <MovieLoader />
+      </main>
+    );
+  }
+
+  if (authScreen === "login") {
+    return (
+      <LoginPage
+        onBack={() => setAuthScreen(null)}
+        onRegister={() => setAuthScreen("register")}
+        onSuccess={handleAuthSuccess}
+      />
+    );
+  }
+
+  if (authScreen === "register") {
+    return (
+      <RegisterPage
+        onBack={() => setAuthScreen(null)}
+        onLogin={() => setAuthScreen("login")}
+        onSuccess={handleAuthSuccess}
       />
     );
   }
@@ -186,6 +229,8 @@ function App() {
           onBack={() => setSelectedMovieId(null)}
           onEdit={() => handleEdit(selectedMovieId)}
           onDelete={openDeleteDialog}
+          onLogin={() => setAuthScreen("login")}
+          onRegister={() => setAuthScreen("register")}
         />
 
         {movieToDelete && (
@@ -203,40 +248,105 @@ function App() {
 
   return (
     <main className="container">
+      <nav className="site-nav" aria-label="Navegação principal">
+        <button
+          type="button"
+          className="site-brand"
+          onClick={goToCatalog}
+        >
+          <span className="site-brand-mark">▶</span>
+          <span>ROCKETLAB FILMES</span>
+        </button>
+
+        <div className="site-nav-actions">
+          {user ? (
+            <div className="account-menu-wrapper">
+              <button
+                type="button"
+                className="account-trigger"
+                aria-expanded={accountMenuOpen}
+                aria-haspopup="true"
+                onClick={() =>
+                  setAccountMenuOpen((value) => !value)
+                }
+              >
+                <span className="account-avatar">
+                  {user.username.charAt(0).toUpperCase()}
+                </span>
+
+                <span className="account-trigger-name">
+                  {user.username}
+                </span>
+
+                <span
+                  className="account-chevron"
+                  aria-hidden="true"
+                >
+                  {accountMenuOpen ? "⌃" : "⌄"}
+                </span>
+              </button>
+
+              {accountMenuOpen && (
+                <div className="account-dropdown">
+                  <div className="account-dropdown-header">
+                    <span className="account-avatar account-avatar-large">
+                      {user.username.charAt(0).toUpperCase()}
+                    </span>
+
+                    <div>
+                      <strong>{user.username}</strong>
+                      <small>{user.email}</small>
+                    </div>
+                  </div>
+
+                  <div className="account-dropdown-divider" />
+
+                  <button
+                    type="button"
+                    className="account-logout"
+                    onClick={handleSignOut}
+                  >
+                    <span aria-hidden="true">↪</span>
+                    Sair da conta
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="nav-login"
+                onClick={() => setAuthScreen("login")}
+              >
+                Entrar
+              </button>
+
+              <button
+                type="button"
+                className="nav-register"
+                onClick={() => setAuthScreen("register")}
+              >
+                Criar conta
+              </button>
+            </>
+          )}
+        </div>
+      </nav>
+
       <header className="header">
         <div>
-          <p className="eyebrow">ROCKETLAB · ADMIN</p>
-          <h1>Catálogo de filmes</h1>
+          <p className="eyebrow">DESCUBRA · AVALIE · COMPARTILHE</p>
+
+          <h1>Seu universo de filmes.</h1>
+
           <p className="subtitle">
-            Consulte e gerencie os filmes cadastrados.
+            Explore o catálogo, encontre novas histórias
+            e compartilhe o que achou.
           </p>
         </div>
 
         <div className="header-actions">
-          {user ? (
-            <>
-              <span className="current-user">
-                Olá, {user.username}
-              </span>
-
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={signOut}
-              >
-                Sair
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => setShowAuthPage(true)}
-            >
-              Entrar / Criar conta
-            </button>
-          )}
-
           <button
             type="button"
             className="primary-button"
@@ -250,6 +360,7 @@ function App() {
       <section className="toolbar">
         <input
           type="search"
+          aria-label="Pesquisar filmes"
           placeholder="Pesquisar por título..."
           value={search}
           onChange={(event) => {
@@ -315,7 +426,10 @@ function App() {
       )}
 
       {!loading && !error && totalPages > 1 && (
-        <nav className="pagination">
+        <nav
+          className="pagination"
+          aria-label="Paginação dos filmes"
+        >
           <button
             type="button"
             disabled={page === 1}
