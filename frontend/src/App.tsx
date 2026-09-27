@@ -34,7 +34,51 @@ function App() {
   const [movies, setMovies] = useState<Movie[]>([]);
 
   const [selectedMovieId, setSelectedMovieId] =
-    useState<string | null>(null);
+    useState<string | null>(() => {
+      const match = window.location.pathname.match(
+        /^\/movies\/([^/]+)\/?$/
+      );
+
+      return match
+        ? decodeURIComponent(match[1])
+        : null;
+    });
+
+  function openMovie(movieId: string) {
+    window.history.pushState(
+      {},
+      "",
+      `/movies/${encodeURIComponent(movieId)}`
+    );
+
+    setSelectedMovieId(movieId);
+  }
+
+  function closeMovie() {
+    window.history.pushState({}, "", "/");
+    setSelectedMovieId(null);
+  }
+
+  useEffect(() => {
+    function handlePopState() {
+      const match = window.location.pathname.match(
+        /^\/movies\/([^/]+)\/?$/
+      );
+
+      setSelectedMovieId(
+        match ? decodeURIComponent(match[1]) : null
+      );
+    }
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener(
+        "popstate",
+        handlePopState
+      );
+    };
+  }, []);
 
   const [editingMovie, setEditingMovie] =
     useState<MovieDetail | null>(null);
@@ -111,7 +155,7 @@ function App() {
   function handleSaved(movie: MovieDetail) {
     setEditingMovie(null);
     setShowCreateForm(false);
-    setSelectedMovieId(movie.sk_movie_id);
+    openMovie(movie.sk_movie_id);
     setRefreshKey((value) => value + 1);
   }
 
@@ -167,7 +211,7 @@ function App() {
 
   function goToCatalog() {
     setAuthScreen(null);
-    setSelectedMovieId(null);
+    closeMovie();
     setEditingMovie(null);
     setShowCreateForm(false);
   }
@@ -226,7 +270,7 @@ function App() {
         <MovieDetails
           key={refreshKey}
           movieId={selectedMovieId}
-          onBack={() => setSelectedMovieId(null)}
+          onBack={closeMovie}
           onEdit={() => handleEdit(selectedMovieId)}
           onDelete={openDeleteDialog}
           onLogin={() => setAuthScreen("login")}
@@ -391,9 +435,7 @@ function App() {
               type="button"
               className="movie-card"
               key={movie.sk_movie_id}
-              onClick={() =>
-                setSelectedMovieId(movie.sk_movie_id)
-              }
+              onClick={() => openMovie(movie.sk_movie_id)}
             >
               <div className="poster">
                 {movie.url_poster ? (

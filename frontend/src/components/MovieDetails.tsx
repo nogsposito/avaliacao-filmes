@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 
 import ReviewForm from "./ReviewForm";
+import MovieLoader from "./MovieLoader";
 
 import { useAuth } from "../auth/AuthContext";
 
@@ -11,7 +12,6 @@ import {
 } from "../services/movies";
 
 import { formatRating } from "../utils/ratings";
-import MovieLoader from "./MovieLoader";
 
 interface MovieDetailsProps {
   movieId: string;
@@ -92,7 +92,7 @@ function MovieDetails({
           className="back-button"
           onClick={onBack}
         >
-          ← Voltar ao catálogo
+          Voltar ao catálogo
         </button>
 
         <p className="error">
@@ -102,8 +102,14 @@ function MovieDetails({
     );
   }
 
-  const directors = movie.people.filter(
+  const directors = (movie.people ?? []).filter(
     (person) => person.tipo_pessoa === "Diretor"
+  );
+
+  const reviews = [...(movie.reviews ?? [])].sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() -
+      new Date(a.created_at).getTime()
   );
 
   return (
@@ -113,7 +119,7 @@ function MovieDetails({
         className="back-button"
         onClick={onBack}
       >
-        ← Voltar ao catálogo
+        Voltar ao catálogo
       </button>
 
       <div className="details-layout">
@@ -155,7 +161,7 @@ function MovieDetails({
           </div>
 
           <div className="genre-list">
-            {movie.genres.map((genre) => (
+            {(movie.genres ?? []).map((genre) => (
               <span
                 className="genre-tag"
                 key={genre}
@@ -167,8 +173,8 @@ function MovieDetails({
 
           <div className="rating-summary">
             <strong>
-              {movie.nota_media !== null
-                ? `${formatRating(movie.nota_media)} ★`
+              {movie.nota_media != null
+                ? formatRating(movie.nota_media)
                 : "Ainda sem nota"}
             </strong>
 
@@ -184,7 +190,6 @@ function MovieDetails({
               onClick={onEdit}
               title="Editar informações do filme"
             >
-              <span aria-hidden="true">✎</span>
               Editar filme
             </button>
 
@@ -194,7 +199,6 @@ function MovieDetails({
               onClick={() => onDelete(movie)}
               title="Excluir filme do catálogo"
             >
-              <span aria-hidden="true">⌫</span>
               Excluir
             </button>
           </div>
@@ -223,7 +227,7 @@ function MovieDetails({
             </p>
           </section>
 
-          {movie.companies.length > 0 && (
+          {(movie.companies ?? []).length > 0 && (
             <section>
               <h2>Produtoras</h2>
 
@@ -242,18 +246,26 @@ function MovieDetails({
           <ReviewForm
             movieId={movie.sk_movie_id}
             onCreated={() =>
-              setReviewsRefreshKey((value) => value + 1)
+              setReviewsRefreshKey(
+                (value) => value + 1
+              )
             }
           />
         ) : (
           <div className="review-login-prompt">
-            <div className="review-login-icon">★</div>
+            <div className="review-login-icon">
+              ★
+            </div>
 
             <div className="review-login-copy">
-              <h3>O que você achou deste filme?</h3>
+              <h3>
+                O que você achou deste filme?
+              </h3>
+
               <p>
-                Entre na sua conta para dar uma nota e
-                compartilhar sua opinião.
+                Entre na sua conta para dar
+                uma nota e compartilhar sua
+                opinião.
               </p>
             </div>
 
@@ -276,6 +288,48 @@ function MovieDetails({
             </div>
           </div>
         )}
+
+        <div className="reviews-list">
+          {reviews.length === 0 ? (
+            <p>
+              Este filme ainda não possui
+              avaliações.
+            </p>
+          ) : (
+            reviews.map((review) => (
+              <article
+                key={
+                  review.sk_movie_review_id
+                }
+                className="review-card"
+              >
+                <div className="review-header">
+                  <strong>
+                    {review.nome}
+                  </strong>
+
+                  <span>
+                    {formatRating(
+                      review.nota
+                    )}
+                  </span>
+                </div>
+
+                <p>
+                  {review.comentario}
+                </p>
+
+                <small>
+                  {new Date(
+                    review.created_at
+                  ).toLocaleDateString(
+                    "pt-BR"
+                  )}
+                </small>
+              </article>
+            ))
+          )}
+        </div>
       </section>
     </main>
   );
