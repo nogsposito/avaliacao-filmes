@@ -56,6 +56,16 @@ export interface MovieCreate {
   url_poster: string | null;
 }
 
+export interface MyMovie {
+  movie_id: string;
+  titulo: string;
+  url_poster: string | null;
+  ano_lancamento: number | null;
+  watched_at: string;
+  nota: number | null;
+  comentario: string | null;
+}
+
 export interface RecentReview {
   sk_movie_review_id: string;
   sk_movie_id: string;
@@ -104,6 +114,27 @@ export async function getFeaturedMovies(
   if (!response.ok) {
     throw new Error(
       "Não foi possível carregar os filmes em destaque."
+    );
+  }
+
+  return response.json();
+}
+
+export async function getMyMovies(
+  token: string
+): Promise<MyMovie[]> {
+  const response = await fetch(
+    `${API_URL}/movies/my-movies`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Não foi possível carregar seus filmes."
     );
   }
 
@@ -202,6 +233,73 @@ export async function deleteMovie(movieId: string): Promise<void> {
   }
 }
 
+export interface MovieWatchStatus {
+  watched: boolean;
+}
+
+export async function getMovieWatchStatus(
+  movieId: string,
+  token: string
+): Promise<MovieWatchStatus> {
+  const response = await fetch(
+    `${API_URL}/movies/${encodeURIComponent(movieId)}/watch`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Não foi possível verificar se o filme foi assistido."
+    );
+  }
+
+  return response.json();
+}
+
+export async function markMovieAsWatched(
+  movieId: string,
+  token: string
+): Promise<void> {
+  const response = await fetch(
+    `${API_URL}/movies/${encodeURIComponent(movieId)}/watch`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Não foi possível marcar o filme como assistido."
+    );
+  }
+}
+
+export async function unmarkMovieAsWatched(
+  movieId: string,
+  token: string
+): Promise<void> {
+  const response = await fetch(
+    `${API_URL}/movies/${encodeURIComponent(movieId)}/watch`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Não foi possível desmarcar o filme."
+    );
+  }
+}
 
 export interface ReviewCreate {
   nota: number;

@@ -8,6 +8,9 @@ import { useAuth } from "../auth/AuthContext";
 
 import {
   getMovie,
+  getMovieWatchStatus,
+  markMovieAsWatched,
+  unmarkMovieAsWatched,
   type MovieDetail,
 } from "../services/movies";
 
@@ -33,10 +36,13 @@ function MovieDetails({
   const [movie, setMovie] =
     useState<MovieDetail | null>(null);
 
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [watched, setWatched] = useState(false);
+  const [watchLoading, setWatchLoading] = useState(false);
 
   const [reviewsRefreshKey, setReviewsRefreshKey] =
     useState(0);
@@ -75,6 +81,72 @@ function MovieDetails({
       active = false;
     };
   }, [movieId, reviewsRefreshKey]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadWatchStatus() {
+      if (!user || !token) {
+        setWatched(false);
+        return;
+      }
+
+      try {
+        const data = await getMovieWatchStatus(
+          movieId,
+          token
+        );
+
+        if (active) {
+          setWatched(data.watched);
+        }
+      } catch (error) {
+        console.error(
+          "Erro ao carregar status de assistido:",
+          error
+        );
+      }
+    }
+
+    loadWatchStatus();
+
+    return () => {
+      active = false;
+    };
+  }, [movieId, user, token]);
+
+  async function handleWatchToggle() {
+    if (!token || watchLoading) {
+      return;
+    }
+
+    setWatchLoading(true);
+
+    try {
+      if (watched) {
+        await unmarkMovieAsWatched(
+          movieId,
+          token
+        );
+
+        setWatched(false);
+      } else {
+        await markMovieAsWatched(
+          movieId,
+          token
+        );
+
+        setWatched(true);
+      }
+    } catch (error) {
+      console.error(
+        "Erro ao alterar status de assistido:",
+        error
+      );
+    } finally {
+      setWatchLoading(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -182,6 +254,25 @@ function MovieDetails({
               {movie.total_avaliacoes} avaliações
             </span>
           </div>
+
+          {user && (
+            <button
+              type="button"
+              className={
+                watched
+                  ? "watched-button watched"
+                  : "watched-button"
+              }
+              onClick={handleWatchToggle}
+              disabled={watchLoading}
+            >
+              {watchLoading
+                ? "Salvando..."
+                : watched
+                  ? "Assistido"
+                  : "Marcar como assistido"}
+            </button>
+          )}
 
           <div className="movie-actions">
             <button

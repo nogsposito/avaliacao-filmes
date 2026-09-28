@@ -15,6 +15,11 @@ import {
 import { useAuth } from "../auth/AuthContext";
 
 import {
+  getMyMovies,
+  type MyMovie,
+} from "../services/movies";
+
+import {
   getMyReviews,
   type MyReview,
 } from "../services/auth";
@@ -36,6 +41,9 @@ function AccountPage({
 }: AccountPageProps) {
   const { user, token } =
     useAuth();
+
+  const [myMovies, setMyMovies] = useState<MyMovie[]>([]);
+  const [moviesLoading, setMoviesLoading] = useState(true);
 
   const [reviews, setReviews] =
     useState<MyReview[]>([]);
@@ -92,6 +100,97 @@ function AccountPage({
       active = false;
     };
   }, [token]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadMyMovies() {
+      if (!token) {
+        setMoviesLoading(false);
+        return;
+      }
+
+      try {
+        const data = await getMyMovies(token);
+
+        if (active) {
+          setMyMovies(data);
+        }
+      } catch (error) {
+        console.error(
+          "Erro ao carregar filmes do usuário:",
+          error
+        );
+      } finally {
+        if (active) {
+          setMoviesLoading(false);
+        }
+      }
+    }
+
+    loadMyMovies();
+
+    return () => {
+      active = false;
+    };
+  }, [token]);
+
+  <section className="account-movies-section">
+    <div className="account-section-heading">
+      <p className="eyebrow">
+        Sua atividade
+      </p>
+
+      <h2>Seus filmes</h2>
+    </div>
+
+    {moviesLoading ? (
+      <p>Carregando seus filmes...</p>
+    ) : myMovies.length === 0 ? (
+      <p className="account-empty">
+        Você ainda não marcou nenhum filme como assistido.
+      </p>
+    ) : (
+      <div className="account-movies-grid">
+        {myMovies.map((movie) => (
+          <button
+            type="button"
+            className="account-movie-card"
+            key={movie.movie_id}
+            onClick={() =>
+              onOpenMovie(movie.movie_id)
+            }
+          >
+            <div className="account-movie-poster">
+              {movie.url_poster ? (
+                <img
+                  src={movie.url_poster}
+                  alt={`Pôster de ${movie.titulo}`}
+                  loading="lazy"
+                />
+              ) : (
+                <span>Sem pôster</span>
+              )}
+            </div>
+
+            <div className="account-movie-info">
+              <h3>{movie.titulo}</h3>
+
+              {movie.nota !== null ? (
+                <span className="account-movie-rating">
+                  ★ {movie.nota}/5
+                </span>
+              ) : (
+                <span className="account-movie-watched">
+                  ✓ Assistido
+                </span>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    )}
+  </section>
 
   if (!user) {
     return (

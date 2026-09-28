@@ -2,6 +2,7 @@ from datetime import datetime
 from math import ceil
 from uuid import uuid4
 
+from app import db
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
@@ -14,7 +15,13 @@ from app.users.dependencies import get_current_user
 from app.users.models import User
 
 from app.db.session import get_db
-from app.movies.models import DimGenre, DimMovie, DimPerson, MovieReview
+from app.movies.models import (
+    DimGenre,
+    DimMovie,
+    DimPerson,
+    MovieReview,
+    MovieWatch,
+)
 
 from app.movies.schemas import (
     MovieCreate,
@@ -22,6 +29,8 @@ from app.movies.schemas import (
     MovieOut,
     MovieReviewsOut,
     MovieUpdate,
+    MovieWatchOut,
+    MyMovieOut,
     PaginatedMovies,
     PersonOut,
     RecentReviewOut,
@@ -164,6 +173,145 @@ async def get_recent_reviews(
         )
         for review, movie in rows
     ]
+
+# Retorna os filmes assistidos pelo usuário autenticado, incluindo detalhes do filme e avaliações.
+@router.get(
+    "/my-movies",
+    response_model=list[MyMovieOut],
+)
+async def get_my_movies(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(MovieWatch, DimMovie)
+        .join(
+            DimMovie,
+            MovieWatch.sk_movie_id == DimMovie.sk_movie_id,
+        )
+        .where(
+            MovieWatch.user_id == current_user.id,
+        )
+        .order_by(MovieWatch.watched_at.desc())
+    )
+
+    rows = result.all()
+    movies = []
+
+    for watch, movie in rows:
+        review_result = await db.execute(
+            select(MovieReview).where(
+                MovieReview.sk_movie_id == movie.sk_movie_id,
+                MovieReview.user_id == current_user.id,
+            )
+        )
+
+        review = review_result.scalar_one_or_none()
+
+        movies.append(
+            MyMovieOut(
+                movie_id=movie.sk_movie_id,
+                titulo=movie.titulo,
+                url_poster=movie.url_poster,
+                ano_lancamento=movie.ano_lancamento,
+                watched_at=watch.watched_at,
+                nota=review.nota / 2 if review else None,
+                comentario=review.comentario if review else None,
+            )
+        )
+
+    return movies
+
+# Retorna o status de assistido de um filme para o usuário autenticado.
+@router.get(
+    "/{movie_id}/watch",
+)
+async def get_movie_watch_status(
+    movie_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(MovieWatch).where(
+            MovieWatch.sk_movie_id == movie_id,
+            MovieWatch.user_id == current_user.id,
+        )
+    )
+
+    watch = result.scalar_one_or_none()
+
+    return {
+        "watched": watch is not None
+    }
+
+# Marca um filme como assistido pelo usuário autenticado.
+@router.post(
+    "/{movie_id}/watch",
+    response_model=MovieWatchOut,
+)
+async def mark_movie_as_watched(
+    movie_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    movie = await db.get(DimMovie, movie_id)
+
+    if movie is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Filme não encontrado.",
+        )
+
+    result = await db.execute(
+        select(MovieWatch).where(
+            MovieWatch.sk_movie_id == movie_id,
+            MovieWatch.user_id == current_user.id,
+        )
+    )
+
+    existing_watch = result.scalar_one_or_none()
+
+    if existing_watch:
+        return existing_watch
+
+    watch = MovieWatch(
+        sk_movie_id=movie_id,
+        user_id=current_user.id,
+    )
+
+    db.add(watch)
+    await db.commit()
+    await db.refresh(watch)
+
+    return watch
+
+# Desmarca um filme como assistido pelo usuário autenticado.
+@router.delete(
+    "/{movie_id}/watch",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def unmark_movie_as_watched(
+    movie_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(MovieWatch).where(
+            MovieWatch.sk_movie_id == movie_id,
+            MovieWatch.user_id == current_user.id,
+        )
+    )
+
+    watch = result.scalar_one_or_none()
+
+    if watch is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Filme não está marcado como assistido.",
+        )
+
+    await db.delete(watch)
+    await db.commit()
 
 # Busca o filme e carrega seus relacionamentos.
 @router.get("/{movie_id}", response_model=MovieDetail)
@@ -414,6 +562,22 @@ async def create_review(
     )
 
     db.add(review)
+    existing_watch_result = await db.execute(
+        select(MovieWatch).where(
+            MovieWatch.sk_movie_id == movie_id,
+            MovieWatch.user_id == current_user.id,
+        )
+    )
+
+    existing_watch = existing_watch_result.scalar_one_or_none()
+
+    if existing_watch is None:
+        watch = MovieWatch(
+            sk_movie_id=movie_id,
+            user_id=current_user.id,
+        )
+        db.add(watch)
+    
     await db.commit()
     await db.refresh(review)
 

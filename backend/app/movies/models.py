@@ -209,6 +209,38 @@ class FactMoviePerformance(Base):
 
     movie: Mapped[DimMovie] = relationship(back_populates="performance")
 
+class MovieWatch(Base):
+    """Registro de um usuário assistindo a um filme."""
+    
+    __tablename__ = "movie_watches"
+
+    sk_movie_watch_id: Mapped[str] = mapped_column(
+        String(64),
+        primary_key=True,
+        default=generate_surrogate_key,
+    )
+
+    sk_movie_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey(
+            "dim_movies.sk_movie_id",
+            ondelete="CASCADE",
+        ),
+        index=True,
+    )
+
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        index=True,
+    )
+
+    watched_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+    )
 
 class MovieReview(Base):
     """Avaliação individual de um filme na escala de 0 a 10."""

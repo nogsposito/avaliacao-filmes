@@ -1428,7 +1428,7 @@ input::placeholder, textarea::placeholder { color: #929b97; }
   color: #d5dbd8;
   font-size: 0.78rem;
   line-height: 1.45;
-  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 
@@ -1441,5 +1441,209 @@ input::placeholder, textarea::placeholder { color: #929b97; }
 @media (max-width: 600px) {
   .recent-reviews-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.watched-button {
+  padding: 11px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.watched-button:hover {
+  border-color: var(--lime);
+}
+
+.watched-button.watched {
+  border-color: var(--lime);
+  background: var(--lime);
+  color: #18251c;
+}
+
+.watched-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.account-movies-section {
+  margin-top: 2rem;
+}
+
+.account-section-heading {
+  margin-bottom: 1rem;
+}
+
+.account-section-heading h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.account-movies-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.account-movie-card {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.account-movie-poster {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #202124;
+}
+
+.account-movie-poster img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 180ms ease;
+}
+
+.account-movie-card:hover .account-movie-poster img {
+  transform: scale(1.025);
+}
+
+.account-movie-info {
+  margin-top: 0.65rem;
+}
+
+.account-movie-info h3 {
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-movie-rating,
+.account-movie-watched {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.account-movie-rating {
+  color: var(--orange);
+}
+
+.account-movie-watched {
+  color: var(--lime);
+}
+
+.account-empty {
+  opacity: 0.65;
+}
+
+@media (max-width: 1000px) {
+  .account-movies-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .account-movies-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ===== Catálogo no mesmo formato de Em destaque ===== */
+
+.catalog-heading {
+  margin: 3rem 0 1rem;
+}
+
+.catalog-heading h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.movie-card {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.poster {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #202124;
+}
+
+.poster img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 180ms ease;
+}
+
+.movie-card:hover .poster img {
+  transform: scale(1.025);
+}
+
+.movie-info {
+  margin-top: 0.65rem;
+}
+
+.movie-info h2 {
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.movie-info span {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+@media (max-width: 1000px) {
+  .movie-grid {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .movie-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
   }
 }

@@ -123,6 +123,13 @@ class MovieUpdate(BaseModel):
 
         return generos
 
+# Schema para output de um filme assistido.
+class MovieWatchOut(BaseModel):
+    sk_movie_watch_id: str
+    sk_movie_id: str
+    user_id: str
+    watched_at: datetime
+
 # Schema para criação de uma avaliação de filme.
 class ReviewCreate(BaseModel):
     nota: float = Field(ge=0.5, le=5, multiple_of=0.5)
@@ -166,6 +173,7 @@ class MovieDetail(MovieOut):
     total_avaliacoes: int = 0
     nota_media: float | None = None
 
+# Schema para output de uma avaliação recente.
 class RecentReviewOut(BaseModel):
     sk_movie_review_id: str
     sk_movie_id: str
@@ -175,3 +183,13 @@ class RecentReviewOut(BaseModel):
     created_at: datetime
     titulo: str
     url_poster: str | None
+
+# Schema para output de um filme assistido, incluindo detalhes do filme.
+class MyMovieOut(BaseModel):
+    movie_id: str
+    titulo: str
+    url_poster: str | None
+    ano_lancamento: int | None
+    watched_at: datetime
+    nota: float | None
+    comentario: str | None

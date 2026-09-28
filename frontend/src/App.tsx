@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 
 import { useAuth } from "./auth/AuthContext";
@@ -9,7 +8,6 @@ import MovieDetails from "./components/MovieDetails";
 import MovieForm from "./components/MovieForm";
 import MovieLoader from "./components/MovieLoader";
 import RegisterPage from "./components/RegisterPage";
-
 import AccountPage from "./components/AccountPage";
 
 import {
@@ -28,7 +26,11 @@ import "./App.css";
 type AuthScreen = "login" | "register" | null;
 
 function App() {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+    signOut,
+  } = useAuth();
 
   const [authScreen, setAuthScreen] =
     useState<AuthScreen>(null);
@@ -59,16 +61,16 @@ function App() {
         : null;
     });
 
-    const [showAccount, setShowAccount] = useState(
-      window.location.pathname === "/account"
-    );
+  const [showAccount, setShowAccount] = useState(
+    window.location.pathname === "/account"
+  );
 
-    function openAccount() {
-      window.history.pushState({}, "", "/account");
-      setSelectedMovieId(null);
-      setShowAccount(true);
-      setAccountMenuOpen(false);
-    }
+  function openAccount() {
+    window.history.pushState({}, "", "/account");
+    setSelectedMovieId(null);
+    setShowAccount(true);
+    setAccountMenuOpen(false);
+  }
 
   function openMovie(movieId: string) {
     window.history.pushState(
@@ -78,13 +80,13 @@ function App() {
     );
 
     setSelectedMovieId(movieId);
-    setShowAccount(false)
+    setShowAccount(false);
   }
 
   function closeMovie() {
     window.history.pushState({}, "", "/");
     setSelectedMovieId(null);
-    setShowAccount(false)
+    setShowAccount(false);
   }
 
   useEffect(() => {
@@ -102,7 +104,10 @@ function App() {
       );
     }
 
-    window.addEventListener("popstate", handlePopState);
+    window.addEventListener(
+      "popstate",
+      handlePopState
+    );
 
     return () => {
       window.removeEventListener(
@@ -265,7 +270,9 @@ function App() {
     setDeleteError("");
 
     try {
-      await deleteMovie(movieToDelete.sk_movie_id);
+      await deleteMovie(
+        movieToDelete.sk_movie_id
+      );
 
       setMovieToDelete(null);
       setSelectedMovieId(null);
@@ -315,7 +322,9 @@ function App() {
     return (
       <LoginPage
         onBack={() => setAuthScreen(null)}
-        onRegister={() => setAuthScreen("register")}
+        onRegister={() =>
+          setAuthScreen("register")
+        }
         onSuccess={handleAuthSuccess}
       />
     );
@@ -345,7 +354,9 @@ function App() {
   if (showCreateForm) {
     return (
       <MovieForm
-        onCancel={() => setShowCreateForm(false)}
+        onCancel={() =>
+          setShowCreateForm(false)
+        }
         onSaved={handleSaved}
       />
     );
@@ -367,10 +378,16 @@ function App() {
           key={refreshKey}
           movieId={selectedMovieId}
           onBack={closeMovie}
-          onEdit={() => handleEdit(selectedMovieId)}
+          onEdit={() =>
+            handleEdit(selectedMovieId)
+          }
           onDelete={openDeleteDialog}
-          onLogin={() => setAuthScreen("login")}
-          onRegister={() => setAuthScreen("register")}
+          onLogin={() =>
+            setAuthScreen("login")
+          }
+          onRegister={() =>
+            setAuthScreen("register")
+          }
         />
 
         {movieToDelete && (
@@ -388,13 +405,19 @@ function App() {
 
   return (
     <main className="container">
-      <nav className="site-nav" aria-label="Navegação principal">
+      <nav
+        className="site-nav"
+        aria-label="Navegação principal"
+      >
         <button
           type="button"
           className="site-brand"
           onClick={goToCatalog}
         >
-          <span className="site-brand-mark">▶</span>
+          <span className="site-brand-mark">
+            ▶
+          </span>
+
           <span>ROCKETLAB FILMES</span>
         </button>
 
@@ -407,22 +430,19 @@ function App() {
                 aria-expanded={accountMenuOpen}
                 aria-haspopup="true"
                 onClick={() =>
-                  setAccountMenuOpen((value) => !value)
+                  setAccountMenuOpen(
+                    (value) => !value
+                  )
                 }
               >
                 <span className="account-avatar">
-                  {user.username.charAt(0).toUpperCase()}
+                  {user.username
+                    .charAt(0)
+                    .toUpperCase()}
                 </span>
 
                 <span className="account-trigger-name">
                   {user.username}
-                </span>
-
-                <span
-                  className="account-chevron"
-                  aria-hidden="true"
-                >
-                  {accountMenuOpen ? "⌃" : "⌄"}
                 </span>
               </button>
 
@@ -430,12 +450,19 @@ function App() {
                 <div className="account-dropdown">
                   <div className="account-dropdown-header">
                     <span className="account-avatar account-avatar-large">
-                      {user.username.charAt(0).toUpperCase()}
+                      {user.username
+                        .charAt(0)
+                        .toUpperCase()}
                     </span>
 
                     <div>
-                      <strong>{user.username}</strong>
-                      <small>{user.email}</small>
+                      <strong>
+                        {user.username}
+                      </strong>
+
+                      <small>
+                        {user.email}
+                      </small>
                     </div>
                   </div>
 
@@ -448,13 +475,15 @@ function App() {
                   >
                     Minha conta
                   </button>
-                
+
                   <button
                     type="button"
                     className="account-logout"
                     onClick={handleSignOut}
                   >
-                    <span aria-hidden="true">↪</span>
+                    <span aria-hidden="true">
+                      ↪
+                    </span>
                     Sair da conta
                   </button>
                 </div>
@@ -465,7 +494,9 @@ function App() {
               <button
                 type="button"
                 className="nav-login"
-                onClick={() => setAuthScreen("login")}
+                onClick={() =>
+                  setAuthScreen("login")
+                }
               >
                 Entrar
               </button>
@@ -473,7 +504,9 @@ function App() {
               <button
                 type="button"
                 className="nav-register"
-                onClick={() => setAuthScreen("register")}
+                onClick={() =>
+                  setAuthScreen("register")
+                }
               >
                 Criar conta
               </button>
@@ -484,13 +517,15 @@ function App() {
 
       <header className="header">
         <div>
-          <p className="eyebrow">DESCUBRA · AVALIE · COMPARTILHE</p>
+          <p className="eyebrow">
+            DESCUBRA · AVALIE · COMPARTILHE
+          </p>
 
           <h1>Seu universo de filmes.</h1>
 
           <p className="subtitle">
-            Explore o catálogo, encontre novas histórias
-            e compartilhe o que achou.
+            Explore o catálogo, encontre novas
+            histórias e compartilhe o que achou.
           </p>
         </div>
 
@@ -498,96 +533,16 @@ function App() {
           <button
             type="button"
             className="primary-button"
-            onClick={() => setShowCreateForm(true)}
+            onClick={() =>
+              setShowCreateForm(true)
+            }
           >
             + Novo filme
           </button>
         </div>
       </header>
 
-      {featuredMovies.length > 0 && !search && (
-        <section className="featured-section">
-          <div className="featured-heading">
-            <div>
-              <p className="eyebrow">PARA DESCOBRIR</p>
-              <h2>Em destaque</h2>
-            </div>
-          </div>
-
-          <div className="featured-grid">
-            {featuredMovies.map((movie) => (
-              <button
-                type="button"
-                className="featured-card"
-                key={movie.sk_movie_id}
-                onClick={() => openMovie(movie.sk_movie_id)}
-              >
-                <div className="featured-poster">
-                  {movie.url_poster ? (
-                    <img
-                      src={movie.url_poster}
-                      alt={`Pôster de ${movie.titulo}`}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <span>Sem pôster</span>
-                  )}
-                </div>
-
-                <div className="featured-info">
-                  <h3>{movie.titulo}</h3>
-
-                  <span>
-                    {movie.ano_lancamento ??
-                      "Ano desconhecido"}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {recentReviews.length > 0 && !search && (
-        <section className="recent-reviews-section">
-          <div className="recent-reviews-heading">
-            <div>
-              <p className="eyebrow">DA COMUNIDADE</p>
-              <h2>Avaliações recentes</h2>
-            </div>
-          </div>
-
-          <div className="recent-reviews-grid">
-            {recentReviews.map((review) => (
-              <button
-                type="button"
-                className="recent-review-card"
-                key={review.sk_movie_review_id}
-                onClick={() => openMovie(review.sk_movie_id)}
-              >
-                <div className="recent-review-poster">
-                  <img
-                    src={review.url_poster ?? ""}
-                    alt={`Pôster de ${review.titulo}`}
-                    loading="lazy"
-                  />
-                </div>
-
-                <div className="recent-review-content">
-                  <h3>{review.titulo}</h3>
-
-                  <div className="recent-review-meta">
-                    <strong>{review.nome}</strong>
-                    <span>★ {review.nota}/5</span>
-                  </div>
-
-                  <p>{review.comentario}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* PESQUISA */}
 
       <section className="toolbar">
         <input
@@ -601,20 +556,165 @@ function App() {
           }}
         />
 
-        <span>{total} filmes encontrados</span>
+        <span>
+          {total} filmes encontrados
+        </span>
+      </section>
+
+      {/* EM DESTAQUE */}
+
+      {featuredMovies.length > 0 &&
+        !search && (
+          <section className="featured-section">
+            <div className="featured-heading">
+              <div>
+                <p className="eyebrow">
+                  PARA DESCOBRIR
+                </p>
+
+                <h2>Em destaque</h2>
+              </div>
+            </div>
+
+            <div className="featured-grid">
+              {featuredMovies.map((movie) => (
+                <button
+                  type="button"
+                  className="featured-card"
+                  key={movie.sk_movie_id}
+                  onClick={() =>
+                    openMovie(
+                      movie.sk_movie_id
+                    )
+                  }
+                >
+                  <div className="featured-poster">
+                    {movie.url_poster ? (
+                      <img
+                        src={movie.url_poster}
+                        alt={`Pôster de ${movie.titulo}`}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span>
+                        Sem pôster
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="featured-info">
+                    <h3>
+                      {movie.titulo}
+                    </h3>
+
+                    <span>
+                      {movie.ano_lancamento ??
+                        "Ano desconhecido"}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+      {/* AVALIAÇÕES RECENTES */}
+
+      {recentReviews.length > 0 &&
+        !search && (
+          <section className="recent-reviews-section">
+            <div className="recent-reviews-heading">
+              <div>
+                <p className="eyebrow">
+                  DA COMUNIDADE
+                </p>
+
+                <h2>
+                  Avaliações recentes
+                </h2>
+              </div>
+            </div>
+
+            <div className="recent-reviews-grid">
+              {recentReviews.map(
+                (review) => (
+                  <button
+                    type="button"
+                    className="recent-review-card"
+                    key={
+                      review.sk_movie_review_id
+                    }
+                    onClick={() =>
+                      openMovie(
+                        review.sk_movie_id
+                      )
+                    }
+                  >
+                    <div className="recent-review-poster">
+                      <img
+                        src={
+                          review.url_poster ??
+                          ""
+                        }
+                        alt={`Pôster de ${review.titulo}`}
+                        loading="lazy"
+                      />
+                    </div>
+
+                    <div className="recent-review-content">
+                      <h3>
+                        {review.titulo}
+                      </h3>
+
+                      <div className="recent-review-meta">
+                        <strong>
+                          {review.nome}
+                        </strong>
+
+                        <span>
+                          ★ {review.nota}/5
+                        </span>
+                      </div>
+
+                      <p>
+                        {review.comentario}
+                      </p>
+                    </div>
+                  </button>
+                )
+              )}
+            </div>
+          </section>
+        )}
+
+      {/* CATÁLOGO */}
+
+      <section className="catalog-heading">
+        <p className="eyebrow">
+          EXPLORE
+        </p>
+
+        <h2>Catálogo</h2>
       </section>
 
       {loading && <MovieLoader />}
 
       {error && (
-        <p className="error" role="alert">
+        <p
+          className="error"
+          role="alert"
+        >
           {error}
         </p>
       )}
 
-      {!loading && !error && movies.length === 0 && (
-        <p>Nenhum filme encontrado.</p>
-      )}
+      {!loading &&
+        !error &&
+        movies.length === 0 && (
+          <p>
+            Nenhum filme encontrado.
+          </p>
+        )}
 
       {!loading && !error && (
         <section className="movie-grid">
@@ -623,7 +723,9 @@ function App() {
               type="button"
               className="movie-card"
               key={movie.sk_movie_id}
-              onClick={() => openMovie(movie.sk_movie_id)}
+              onClick={() =>
+                openMovie(movie.sk_movie_id)
+              }
             >
               <div className="poster">
                 {movie.url_poster ? (
@@ -638,49 +740,55 @@ function App() {
               </div>
 
               <div className="movie-info">
-                <h2>{movie.titulo}</h2>
+                <h2>
+                  {movie.titulo}
+                </h2>
 
-                <p>
+                <span>
                   {movie.ano_lancamento ??
                     "Ano desconhecido"}
-                </p>
-
-                <p className="synopsis">
-                  {movie.sinopse ||
-                    "Sinopse indisponível."}
-                </p>
+                </span>
               </div>
             </button>
           ))}
         </section>
       )}
 
-      {!loading && !error && totalPages > 1 && (
-        <nav
-          className="pagination"
-          aria-label="Paginação dos filmes"
-        >
-          <button
-            type="button"
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
+      {!loading &&
+        !error &&
+        totalPages > 1 && (
+          <nav
+            className="pagination"
+            aria-label="Paginação dos filmes"
           >
-            Anterior
-          </button>
+            <button
+              type="button"
+              disabled={page === 1}
+              onClick={() =>
+                setPage(page - 1)
+              }
+            >
+              Anterior
+            </button>
 
-          <span>
-            Página {page} de {totalPages}
-          </span>
+            <span>
+              Página {page} de{" "}
+              {totalPages}
+            </span>
 
-          <button
-            type="button"
-            disabled={page >= totalPages}
-            onClick={() => setPage(page + 1)}
-          >
-            Próxima
-          </button>
-        </nav>
-      )}
+            <button
+              type="button"
+              disabled={
+                page >= totalPages
+              }
+              onClick={() =>
+                setPage(page + 1)
+              }
+            >
+              Próxima
+            </button>
+          </nav>
+        )}
     </main>
   );
 }
