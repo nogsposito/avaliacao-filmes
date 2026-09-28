@@ -17,8 +17,10 @@ import {
   getFeaturedMovies,
   getMovie,
   getMovies,
+  getRecentReviews,
   type Movie,
   type MovieDetail,
+  type RecentReview,
 } from "./services/movies";
 
 import "./App.css";
@@ -38,6 +40,9 @@ function App() {
 
   const [featuredMovies, setFeaturedMovies] =
     useState<Movie[]>([]);
+
+  const [recentReviews, setRecentReviews] =
+    useState<RecentReview[]>([]);
 
   const [selectedMovieId, setSelectedMovieId] =
     useState<string | null>(() => {
@@ -144,6 +149,31 @@ function App() {
     }
 
     loadFeaturedMovies();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadRecentReviews() {
+      try {
+        const data = await getRecentReviews(6);
+
+        if (active) {
+          setRecentReviews(data);
+        }
+      } catch (err) {
+        console.error(
+          "Erro ao carregar avaliações recentes:",
+          err
+        );
+      }
+    }
+
+    loadRecentReviews();
 
     return () => {
       active = false;
@@ -502,6 +532,47 @@ function App() {
                     {movie.ano_lancamento ??
                       "Ano desconhecido"}
                   </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {recentReviews.length > 0 && !search && (
+        <section className="recent-reviews-section">
+          <div className="recent-reviews-heading">
+            <div>
+              <p className="eyebrow">DA COMUNIDADE</p>
+              <h2>Avaliações recentes</h2>
+            </div>
+          </div>
+
+          <div className="recent-reviews-grid">
+            {recentReviews.map((review) => (
+              <button
+                type="button"
+                className="recent-review-card"
+                key={review.sk_movie_review_id}
+                onClick={() => openMovie(review.sk_movie_id)}
+              >
+                <div className="recent-review-poster">
+                  <img
+                    src={review.url_poster ?? ""}
+                    alt={`Pôster de ${review.titulo}`}
+                    loading="lazy"
+                  />
+                </div>
+
+                <div className="recent-review-content">
+                  <h3>{review.titulo}</h3>
+
+                  <div className="recent-review-meta">
+                    <strong>{review.nome}</strong>
+                    <span>★ {review.nota}/5</span>
+                  </div>
+
+                  <p>{review.comentario}</p>
                 </div>
               </button>
             ))}

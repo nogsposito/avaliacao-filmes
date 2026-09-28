@@ -56,6 +56,17 @@ export interface MovieCreate {
   url_poster: string | null;
 }
 
+export interface RecentReview {
+  sk_movie_review_id: string;
+  sk_movie_id: string;
+  nome: string;
+  nota: number;
+  comentario: string;
+  created_at: string;
+  titulo: string;
+  url_poster: string | null;
+}
+
 export async function getMovies(
   page = 1,
   pageSize = 12,
@@ -88,6 +99,22 @@ export async function getFeaturedMovies(
   if (!response.ok) {
     throw new Error(
       "Não foi possível carregar os filmes em destaque."
+    );
+  }
+
+  return response.json();
+}
+
+export async function getRecentReviews(
+  limit = 6
+): Promise<RecentReview[]> {
+  const response = await fetch(
+    `${API_URL}/movies/recent-reviews?limit=${limit}`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Não foi possível carregar as avaliações recentes."
     );
   }
 
@@ -238,3 +265,4 @@ export async function updateReview(
 
   return response.json();
 }
+

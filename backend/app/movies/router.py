@@ -8,6 +8,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from pydantic import BaseModel
+
 from app.users.dependencies import get_current_user
 from app.users.models import User
 
@@ -22,6 +24,7 @@ from app.movies.schemas import (
     MovieUpdate,
     PaginatedMovies,
     PersonOut,
+    RecentReviewOut,
     ReviewCreate,
     ReviewOut,
 )
@@ -107,6 +110,42 @@ async def get_featured_movies(
     return [
         MovieOut.model_validate(movie)
         for movie in selected
+    ]
+
+# Retorna avaliações recentes para exibição na tela inicial.
+@router.get(
+    "/recent-reviews",
+    response_model=list[RecentReviewOut],
+)
+async def get_recent_reviews(
+    limit: int = Query(default=6, ge=1, le=12),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(MovieReview, DimMovie)
+        .join(
+            DimMovie,
+            MovieReview.sk_movie_id == DimMovie.sk_movie_id,
+        )
+        .where(DimMovie.url_poster.is_not(None))
+        .order_by(MovieReview.created_at.desc())
+        .limit(limit)
+    )
+
+    rows = result.all()
+
+    return [
+        RecentReviewOut(
+            sk_movie_review_id=review.sk_movie_review_id,
+            sk_movie_id=review.sk_movie_id,
+            nome=review.nome,
+            nota=review.nota / 2,
+            comentario=review.comentario,
+            created_at=review.created_at,
+            titulo=movie.titulo,
+            url_poster=movie.url_poster,
+        )
+        for review, movie in rows
     ]
 
 # Busca o filme e carrega seus relacionamentos.
@@ -413,3 +452,4 @@ def format_movie_detail(movie: DimMovie) -> MovieDetail:
         total_avaliacoes=total,
         nota_media=nota_media,
     )
+

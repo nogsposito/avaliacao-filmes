@@ -165,3 +165,13 @@ class MovieDetail(MovieOut):
     reviews: list[ReviewOut] = Field(default_factory=list)
     total_avaliacoes: int = 0
     nota_media: float | None = None
+
+class RecentReviewOut(BaseModel):
+    sk_movie_review_id: str
+    sk_movie_id: str
+    nome: str
+    nota: float
+    comentario: str
+    created_at: datetime
+    titulo: str
+    url_poster: str | None
