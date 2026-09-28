@@ -1770,3 +1770,54 @@ input::placeholder, textarea::placeholder { color: #929b97; }
       );
   }
 }
+
+/* ===== Avaliação do usuário ===== */
+
+.my-review-section {
+  margin-top: 2rem;
+  margin-bottom: 3rem;
+}
+
+.my-review-section > h2,
+.community-reviews-section > h2 {
+  margin-bottom: 1rem;
+}
+
+.my-review-card {
+  border-color: rgba(244, 122, 49, 0.45);
+}
+
+.my-review-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.my-review-footer small {
+  opacity: 0.6;
+}
+
+.my-review-footer .secondary-button {
+  width: auto;
+}
+
+.review-cancel-button {
+  margin-top: 0.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  opacity: 0.65;
+  cursor: pointer;
+}
+
+.review-cancel-button:hover {
+  opacity: 1;
+}
+
+.community-reviews-section {
+  margin-top: 2rem;
+}

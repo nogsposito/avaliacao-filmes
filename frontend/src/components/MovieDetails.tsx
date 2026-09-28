@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 
 import ReviewForm from "./ReviewForm";
@@ -38,14 +37,27 @@ function MovieDetails({
 
   const { user, token } = useAuth();
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading] =
+    useState(true);
 
-  const [watched, setWatched] = useState(false);
-  const [watchLoading, setWatchLoading] = useState(false);
+  const [error, setError] =
+    useState("");
 
-  const [reviewsRefreshKey, setReviewsRefreshKey] =
-    useState(0);
+  const [watched, setWatched] =
+    useState(false);
+
+  const [watchLoading, setWatchLoading] =
+    useState(false);
+
+  const [
+    reviewsRefreshKey,
+    setReviewsRefreshKey,
+  ] = useState(0);
+
+  const [
+    editingReview,
+    setEditingReview,
+  ] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -55,7 +67,8 @@ function MovieDetails({
       setError("");
 
       try {
-        const data = await getMovie(movieId);
+        const data =
+          await getMovie(movieId);
 
         if (active) {
           setMovie(data);
@@ -92,10 +105,11 @@ function MovieDetails({
       }
 
       try {
-        const data = await getMovieWatchStatus(
-          movieId,
-          token
-        );
+        const data =
+          await getMovieWatchStatus(
+            movieId,
+            token
+          );
 
         if (active) {
           setWatched(data.watched);
@@ -148,6 +162,14 @@ function MovieDetails({
     }
   }
 
+  function handleReviewSaved() {
+    setEditingReview(false);
+
+    setReviewsRefreshKey(
+      (value) => value + 1
+    );
+  }
+
   if (loading) {
     return (
       <main className="container">
@@ -168,21 +190,29 @@ function MovieDetails({
         </button>
 
         <p className="error">
-          {error || "Filme não encontrado."}
+          {error ||
+            "Filme não encontrado."}
         </p>
       </main>
     );
   }
 
-  const directors = (movie.people ?? []).filter(
-    (person) => person.tipo_pessoa === "Diretor"
-  );
+  const directors =
+    (movie.people ?? []).filter(
+      (person) =>
+        person.tipo_pessoa === "Diretor"
+    );
 
-  const reviews = [...(movie.reviews ?? [])].sort(
-    (a, b) =>
-      new Date(b.created_at).getTime() -
-      new Date(a.created_at).getTime()
-  );
+  const reviews =
+    [...(movie.reviews ?? [])].sort(
+      (a, b) =>
+        new Date(
+          b.created_at
+        ).getTime() -
+        new Date(
+          a.created_at
+        ).getTime()
+    );
 
   const userReview = user
     ? reviews.find(
@@ -190,6 +220,13 @@ function MovieDetails({
           review.user_id === user.id
       ) ?? null
     : null;
+
+  const communityReviews = user
+    ? reviews.filter(
+        (review) =>
+          review.user_id !== user.id
+      )
+    : reviews;
 
   return (
     <main className="container">
@@ -240,25 +277,30 @@ function MovieDetails({
           </div>
 
           <div className="genre-list">
-            {(movie.genres ?? []).map((genre) => (
-              <span
-                className="genre-tag"
-                key={genre}
-              >
-                {genre}
-              </span>
-            ))}
+            {(movie.genres ?? []).map(
+              (genre) => (
+                <span
+                  className="genre-tag"
+                  key={genre}
+                >
+                  {genre}
+                </span>
+              )
+            )}
           </div>
 
           <div className="rating-summary">
             <strong>
               {movie.nota_media != null
-                ? formatRating(movie.nota_media)
+                ? formatRating(
+                    movie.nota_media
+                  )
                 : "Ainda sem nota"}
             </strong>
 
             <span>
-              {movie.total_avaliacoes} avaliações
+              {movie.total_avaliacoes}{" "}
+              avaliações
             </span>
           </div>
 
@@ -270,7 +312,9 @@ function MovieDetails({
                   ? "watched-button watched"
                   : "watched-button"
               }
-              onClick={handleWatchToggle}
+              onClick={
+                handleWatchToggle
+              }
               disabled={watchLoading}
             >
               {watchLoading
@@ -294,7 +338,9 @@ function MovieDetails({
             <button
               type="button"
               className="danger-button"
-              onClick={() => onDelete(movie)}
+              onClick={() =>
+                onDelete(movie)
+              }
               title="Excluir filme do catálogo"
             >
               Excluir
@@ -325,12 +371,15 @@ function MovieDetails({
             </p>
           </section>
 
-          {(movie.companies ?? []).length > 0 && (
+          {(movie.companies ?? [])
+            .length > 0 && (
             <section>
               <h2>Produtoras</h2>
 
               <p>
-                {movie.companies.join(", ")}
+                {movie.companies.join(
+                  ", "
+                )}
               </p>
             </section>
           )}
@@ -338,96 +387,175 @@ function MovieDetails({
       </div>
 
       <section className="reviews-section">
-        <h2>Avaliações</h2>
-
         {user ? (
-          <ReviewForm
-            movieId={movie.sk_movie_id}
-            onSaved={() =>
-              setReviewsRefreshKey(
-                (value) => value + 1
-              )
-            }
-          />
-        ) : (
-          <div className="review-login-prompt">
-            <div className="review-login-icon">
-              ★
-            </div>
+          <section className="my-review-section">
+            <h2>Sua avaliação</h2>
 
-            <div className="review-login-copy">
-              <h3>
-                O que você achou deste filme?
-              </h3>
-
-              <p>
-                Entre na sua conta para dar
-                uma nota e compartilhar sua
-                opinião.
-              </p>
-            </div>
-
-            <div className="review-login-actions">
-              <button
-                type="button"
-                className="primary-button"
-                onClick={onLogin}
-              >
-                Entrar para avaliar
-              </button>
-
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={onRegister}
-              >
-                Criar conta
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div className="reviews-list">
-          {reviews.length === 0 ? (
-            <p>
-              Este filme ainda não possui
-              avaliações.
-            </p>
-          ) : (
-            reviews.map((review) => (
-              <article
-                key={
-                  review.sk_movie_review_id
-                }
-                className="review-card"
-              >
+            {userReview &&
+            !editingReview ? (
+              <article className="review-card my-review-card">
                 <div className="review-header">
                   <strong>
-                    {review.nome}
+                    {userReview.nome}
                   </strong>
 
                   <span>
                     {formatRating(
-                      review.nota
+                      userReview.nota
                     )}
                   </span>
                 </div>
 
                 <p>
-                  {review.comentario}
+                  {userReview.comentario}
                 </p>
 
-                <small>
-                  {new Date(
-                    review.created_at
-                  ).toLocaleDateString(
-                    "pt-BR"
-                  )}
-                </small>
+                <div className="my-review-footer">
+                  <small>
+                    {new Date(
+                      userReview.created_at
+                    ).toLocaleDateString(
+                      "pt-BR"
+                    )}
+                  </small>
+
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() =>
+                      setEditingReview(
+                        true
+                      )
+                    }
+                  >
+                    Editar avaliação
+                  </button>
+                </div>
               </article>
-            ))
-          )}
-        </div>
+            ) : (
+              <ReviewForm
+                movieId={
+                  movie.sk_movie_id
+                }
+                existingReview={
+                  userReview
+                }
+                onSaved={
+                  handleReviewSaved
+                }
+              />
+            )}
+
+            {userReview &&
+              editingReview && (
+                <button
+                  type="button"
+                  className="review-cancel-button"
+                  onClick={() =>
+                    setEditingReview(
+                      false
+                    )
+                  }
+                >
+                  Cancelar edição
+                </button>
+              )}
+          </section>
+        ) : (
+          <section className="my-review-section">
+            <h2>Sua avaliação</h2>
+
+            <div className="review-login-prompt">
+              <div className="review-login-icon">
+                ★
+              </div>
+
+              <div className="review-login-copy">
+                <h3>
+                  O que você achou deste
+                  filme?
+                </h3>
+
+                <p>
+                  Entre na sua conta para
+                  dar uma nota e
+                  compartilhar sua opinião.
+                </p>
+              </div>
+
+              <div className="review-login-actions">
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={onLogin}
+                >
+                  Entrar para avaliar
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={onRegister}
+                >
+                  Criar conta
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <section className="community-reviews-section">
+          <h2>
+            Avaliações da comunidade
+          </h2>
+
+          <div className="reviews-list">
+            {communityReviews.length ===
+            0 ? (
+              <p>
+                Ainda não há avaliações
+                de outros usuários.
+              </p>
+            ) : (
+              communityReviews.map(
+                (review) => (
+                  <article
+                    key={
+                      review.sk_movie_review_id
+                    }
+                    className="review-card"
+                  >
+                    <div className="review-header">
+                      <strong>
+                        {review.nome}
+                      </strong>
+
+                      <span>
+                        {formatRating(
+                          review.nota
+                        )}
+                      </span>
+                    </div>
+
+                    <p>
+                      {
+                        review.comentario
+                      }
+                    </p>
+
+                    <small>
+                      {new Date(
+                        review.created_at
+                      ).toLocaleDateString(
+                        "pt-BR"
+                      )}
+                    </small>
+                  </article>
+                )
+              )
+            )}
+          </div>
+        </section>
       </section>
     </main>
   );

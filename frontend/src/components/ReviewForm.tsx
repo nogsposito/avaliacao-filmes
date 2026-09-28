@@ -39,20 +39,30 @@ function ReviewForm({
   const [hoverNota, setHoverNota] =
     useState<number | null>(null);
 
-  const [comentario, setComentario] = useState(
-    existingReview?.comentario ?? ""
-  );
+  const [comentario, setComentario] =
+    useState(
+      existingReview?.comentario ?? ""
+    );
 
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [saving, setSaving] =
+    useState(false);
 
-  const isEditing = existingReview !== null;
+  const [error, setError] =
+    useState("");
 
-  const notaExibida = hoverNota ?? nota;
+  const [success, setSuccess] =
+    useState("");
+
+  const isEditing =
+    existingReview !== null;
+
+  const notaExibida =
+    hoverNota ?? nota;
 
   useEffect(() => {
-    setNota(existingReview?.nota ?? 0);
+    setNota(
+      existingReview?.nota ?? 0
+    );
 
     setComentario(
       existingReview?.comentario ?? ""
@@ -68,7 +78,8 @@ function ReviewForm({
     star: number
   ): number {
     const rect =
-      event.currentTarget.getBoundingClientRect();
+      event.currentTarget
+        .getBoundingClientRect();
 
     const mouseX =
       event.clientX - rect.left;
@@ -101,13 +112,16 @@ function ReviewForm({
     }
 
     if (!comentario.trim()) {
-      setError("Escreva um comentário.");
+      setError(
+        "Escreva um comentário."
+      );
       return;
     }
 
     const data: ReviewCreate = {
       nota,
-      comentario: comentario.trim(),
+      comentario:
+        comentario.trim(),
     };
 
     setSaving(true);
@@ -116,7 +130,8 @@ function ReviewForm({
       if (existingReview) {
         await updateReview(
           movieId,
-          existingReview.sk_movie_review_id,
+          existingReview
+            .sk_movie_review_id,
           data,
           token
         );
@@ -153,10 +168,13 @@ function ReviewForm({
   if (!user || !token) {
     return (
       <div className="review-form">
-        <h3>Escrever avaliação</h3>
+        <h3>
+          Escrever avaliação
+        </h3>
 
         <p>
-          Entre na sua conta para avaliar este filme.
+          Entre na sua conta para
+          avaliar este filme.
         </p>
       </div>
     );
@@ -175,7 +193,9 @@ function ReviewForm({
 
       <p className="review-author">
         Avaliando como{" "}
-        <strong>{user.username}</strong>
+        <strong>
+          {user.username}
+        </strong>
       </p>
 
       <div className="rating-field">
@@ -191,96 +211,108 @@ function ReviewForm({
             setHoverNota(null)
           }
         >
-          {[1, 2, 3, 4, 5].map((star) => {
-            const preenchimento =
-              Math.max(
-                0,
-                Math.min(
-                  1,
-                  notaExibida - (star - 1)
-                )
-              ) * 100;
+          {[1, 2, 3, 4, 5].map(
+            (star) => {
+              const preenchimento =
+                Math.max(
+                  0,
+                  Math.min(
+                    1,
+                    notaExibida -
+                      (star - 1)
+                  )
+                ) * 100;
 
-            return (
-              <button
-                key={star}
-                type="button"
-                className="star-button"
-                disabled={saving}
-                onMouseMove={(event) => {
-                  setHoverNota(
-                    getStarRating(
-                      event,
-                      star
-                    )
-                  );
-                }}
-                onClick={(event) => {
-                  setNota(
-                    getStarRating(
-                      event,
-                      star
-                    )
-                  );
-                }}
-                onFocus={() =>
-                  setHoverNota(null)
-                }
-                onKeyDown={(event) => {
-                  if (
-                    event.key ===
-                      "ArrowRight" ||
-                    event.key ===
-                      "ArrowUp"
-                  ) {
-                    event.preventDefault();
-
-                    setNota((value) =>
-                      Math.min(
-                        5,
-                        value + 0.5
+              return (
+                <button
+                  key={star}
+                  type="button"
+                  className="star-button"
+                  disabled={saving}
+                  onMouseMove={(
+                    event
+                  ) => {
+                    setHoverNota(
+                      getStarRating(
+                        event,
+                        star
                       )
                     );
-                  }
-
-                  if (
-                    event.key ===
-                      "ArrowLeft" ||
-                    event.key ===
-                      "ArrowDown"
-                  ) {
-                    event.preventDefault();
-
-                    setNota((value) =>
-                      Math.max(
-                        0.5,
-                        value - 0.5
-                      )
-                    );
-                  }
-                }}
-                aria-label={`${star}ª estrela`}
-                aria-pressed={
-                  nota === star ||
-                  nota === star - 0.5
-                }
-              >
-                <span
-                  className="star-fill"
-                  style={{
-                    backgroundImage:
-                      `linear-gradient(
-                        to right,
-                        #f47a31 ${preenchimento}%,
-                        #68716e ${preenchimento}%
-                      )`,
                   }}
+                  onClick={(
+                    event
+                  ) => {
+                    setNota(
+                      getStarRating(
+                        event,
+                        star
+                      )
+                    );
+                  }}
+                  onFocus={() =>
+                    setHoverNota(null)
+                  }
+                  onKeyDown={(
+                    event
+                  ) => {
+                    if (
+                      event.key ===
+                        "ArrowRight" ||
+                      event.key ===
+                        "ArrowUp"
+                    ) {
+                      event.preventDefault();
+
+                      setNota(
+                        (value) =>
+                          Math.min(
+                            5,
+                            value + 0.5
+                          )
+                      );
+                    }
+
+                    if (
+                      event.key ===
+                        "ArrowLeft" ||
+                      event.key ===
+                        "ArrowDown"
+                    ) {
+                      event.preventDefault();
+
+                      setNota(
+                        (value) =>
+                          Math.max(
+                            0.5,
+                            value - 0.5
+                          )
+                      );
+                    }
+                  }}
+                  aria-label={`${star}ª estrela`}
+                  aria-pressed={
+                    nota === star ||
+                    nota ===
+                      star - 0.5
+                  }
                 >
-                  ★
-                </span>
-              </button>
-            );
-          })}
+                  <span
+                    className="star-fill"
+                    style={{
+                      backgroundImage:
+                        `linear-gradient(
+                          to right,
+                          #f47a31 ${preenchimento}%,
+                          #68716e ${preenchimento}%
+                        )`,
+                    }}
+                  >
+                    ★
+                  </span>
+                </button>
+              );
+            }
+          )}
         </div>
 
         <small>
