@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import ReviewForm from "./ReviewForm";
 import MovieLoader from "./MovieLoader";
@@ -46,8 +49,10 @@ function MovieDetails({
   const [watched, setWatched] =
     useState(false);
 
-  const [watchLoading, setWatchLoading] =
-    useState(false);
+  const [
+    watchLoading,
+    setWatchLoading,
+  ] = useState(false);
 
   const [
     reviewsRefreshKey,
@@ -93,7 +98,10 @@ function MovieDetails({
     return () => {
       active = false;
     };
-  }, [movieId, reviewsRefreshKey]);
+  }, [
+    movieId,
+    reviewsRefreshKey,
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -127,7 +135,11 @@ function MovieDetails({
     return () => {
       active = false;
     };
-  }, [movieId, user, token]);
+  }, [
+    movieId,
+    user,
+    token,
+  ]);
 
   async function handleWatchToggle() {
     if (!token || watchLoading) {
@@ -200,7 +212,8 @@ function MovieDetails({
   const directors =
     (movie.people ?? []).filter(
       (person) =>
-        person.tipo_pessoa === "Diretor"
+        person.tipo_pessoa ===
+        "Diretor"
     );
 
   const reviews =
@@ -228,6 +241,13 @@ function MovieDetails({
       )
     : reviews;
 
+  // Somente quem criou o filme
+  // pode editar ou excluir.
+  const canManageMovie =
+    Boolean(user) &&
+    movie.created_by_user_id ===
+      user?.id;
+
   return (
     <main className="container">
       <button
@@ -246,16 +266,20 @@ function MovieDetails({
               alt={`Pôster de ${movie.titulo}`}
             />
           ) : (
-            <span>Sem pôster</span>
+            <span>
+              Sem pôster
+            </span>
           )}
         </div>
 
         <div className="details-content">
           <p className="eyebrow">
-            ROCKETLAB · ADMIN
+            ROCKETLAB · FILMES
           </p>
 
-          <h1>{movie.titulo}</h1>
+          <h1>
+            {movie.titulo}
+          </h1>
 
           <div className="details-meta">
             <span>
@@ -315,7 +339,9 @@ function MovieDetails({
               onClick={
                 handleWatchToggle
               }
-              disabled={watchLoading}
+              disabled={
+                watchLoading
+              }
             >
               {watchLoading
                 ? "Salvando..."
@@ -325,30 +351,34 @@ function MovieDetails({
             </button>
           )}
 
-          <div className="movie-actions">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={onEdit}
-              title="Editar informações do filme"
-            >
-              Editar filme
-            </button>
+          {canManageMovie && (
+            <div className="movie-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={onEdit}
+                title="Editar informações do filme"
+              >
+                Editar filme
+              </button>
 
-            <button
-              type="button"
-              className="danger-button"
-              onClick={() =>
-                onDelete(movie)
-              }
-              title="Excluir filme do catálogo"
-            >
-              Excluir
-            </button>
-          </div>
+              <button
+                type="button"
+                className="danger-button"
+                onClick={() =>
+                  onDelete(movie)
+                }
+                title="Excluir filme do catálogo"
+              >
+                Excluir
+              </button>
+            </div>
+          )}
 
           <section className="details-synopsis">
-            <h2>Sinopse</h2>
+            <h2>
+              Sinopse
+            </h2>
 
             <p>
               {movie.sinopse ||
@@ -357,7 +387,9 @@ function MovieDetails({
           </section>
 
           <section>
-            <h2>Direção</h2>
+            <h2>
+              Direção
+            </h2>
 
             <p>
               {directors.length > 0
@@ -374,7 +406,9 @@ function MovieDetails({
           {(movie.companies ?? [])
             .length > 0 && (
             <section>
-              <h2>Produtoras</h2>
+              <h2>
+                Produtoras
+              </h2>
 
               <p>
                 {movie.companies.join(
@@ -389,7 +423,9 @@ function MovieDetails({
       <section className="reviews-section">
         {user ? (
           <section className="my-review-section">
-            <h2>Sua avaliação</h2>
+            <h2>
+              Sua avaliação
+            </h2>
 
             {userReview &&
             !editingReview ? (
@@ -407,7 +443,9 @@ function MovieDetails({
                 </div>
 
                 <p>
-                  {userReview.comentario}
+                  {
+                    userReview.comentario
+                  }
                 </p>
 
                 <div className="my-review-footer">
@@ -463,7 +501,9 @@ function MovieDetails({
           </section>
         ) : (
           <section className="my-review-section">
-            <h2>Sua avaliação</h2>
+            <h2>
+              Sua avaliação
+            </h2>
 
             <div className="review-login-prompt">
               <div className="review-login-icon">
@@ -495,7 +535,9 @@ function MovieDetails({
                 <button
                   type="button"
                   className="secondary-button"
-                  onClick={onRegister}
+                  onClick={
+                    onRegister
+                  }
                 >
                   Criar conta
                 </button>

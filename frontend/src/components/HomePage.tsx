@@ -57,14 +57,12 @@ interface HomePageProps {
   onOpenMovie: (movieId: string) => void;
   onOpenCatalog: () => void;
   onCreateMovie: () => void;
-  onSearch: (search: string) => void;
 }
 
 function HomePage({
   onOpenMovie,
   onOpenCatalog,
   onCreateMovie,
-  onSearch,
 }: HomePageProps) {
   const [featuredMovies, setFeaturedMovies] =
     useState<Movie[]>([]);

@@ -8,6 +8,7 @@ export interface Movie {
   ano_lancamento: number | null;
   sinopse: string | null;
   url_poster: string | null;
+  created_by_user_id: string | null;
 }
 
 export interface PaginatedMovies {
@@ -194,63 +195,100 @@ export async function getMovie(
 }
 
 export async function createMovie(
-  data: MovieCreate
-): Promise<MovieDetail> {
-  const response = await fetch(`${API_URL}/movies`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Erro ao cadastrar filme (HTTP ${response.status}).`
-    );
-  }
-
-  return response.json();
-}
-
-export type MovieUpdate = Partial<MovieCreate>;
-
-export async function updateMovie(
-  movieId: string,
-  data: MovieUpdate
+  data: MovieCreate,
+  token: string
 ): Promise<MovieDetail> {
   const response = await fetch(
-    `${API_URL}/movies/${encodeURIComponent(movieId)}`,
+    `${API_URL}/movies`,
     {
-      method: "PATCH",
+      method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type":
+          "application/json",
+        Authorization:
+          `Bearer ${token}`,
       },
       body: JSON.stringify(data),
     }
   );
 
   if (!response.ok) {
+    const body = await response
+      .json()
+      .catch(() => null);
+
     throw new Error(
-      `Não foi possível atualizar o filme (HTTP ${response.status}).`
+      body?.detail ??
+        "Não foi possível cadastrar o filme."
     );
   }
 
   return response.json();
 }
 
+export type MovieUpdate =
+  Partial<MovieCreate>;
 
-export async function deleteMovie(movieId: string): Promise<void> {
+export async function updateMovie(
+  movieId: string,
+  data: MovieUpdate,
+  token: string
+): Promise<MovieDetail> {
   const response = await fetch(
-    `${API_URL}/movies/${encodeURIComponent(movieId)}`,
+    `${API_URL}/movies/${encodeURIComponent(
+      movieId
+    )}`,
     {
-      method: "DELETE",
+      method: "PATCH",
+      headers: {
+        "Content-Type":
+          "application/json",
+        Authorization:
+          `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
     }
   );
 
   if (!response.ok) {
+    const body = await response
+      .json()
+      .catch(() => null);
+
     throw new Error(
-      `Não foi possível excluir o filme (HTTP ${response.status}).`
+      body?.detail ??
+        "Não foi possível atualizar o filme."
+    );
+  }
+
+  return response.json();
+}
+
+export async function deleteMovie(
+  movieId: string,
+  token: string
+): Promise<void> {
+  const response = await fetch(
+    `${API_URL}/movies/${encodeURIComponent(
+      movieId
+    )}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const body = await response
+      .json()
+      .catch(() => null);
+
+    throw new Error(
+      body?.detail ??
+        "Não foi possível excluir o filme."
     );
   }
 }

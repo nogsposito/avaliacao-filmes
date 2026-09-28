@@ -73,6 +73,7 @@ function getMovieIdFromPath():
 function App() {
   const {
     user,
+    token,
     loading: authLoading,
     signOut,
   } = useAuth();
@@ -141,8 +142,6 @@ function App() {
     setRefreshKey,
   ] = useState(0);
 
-  // Pesquisa que será enviada da Home
-  // para o catálogo completo.
   const [
     catalogSearch,
     setCatalogSearch,
@@ -178,9 +177,6 @@ function App() {
     setAuthScreen(null);
     setEditingMovie(null);
     setShowCreateForm(false);
-
-    // Ao voltar para a Home,
-    // limpa a pesquisa anterior.
     setCatalogSearch("");
 
     navigate(
@@ -193,9 +189,6 @@ function App() {
     setAuthScreen(null);
     setEditingMovie(null);
     setShowCreateForm(false);
-
-    // Abrindo pelo botão "Catálogo completo",
-    // mostramos todos os filmes.
     setCatalogSearch("");
 
     navigate(
@@ -282,6 +275,17 @@ function App() {
       const movie =
         await getMovie(movieId);
 
+      if (
+        !user ||
+        movie.created_by_user_id !==
+          user.id
+      ) {
+        setAppError(
+          "Você só pode editar filmes adicionados por você."
+        );
+        return;
+      }
+
       setEditingMovie(movie);
     } catch (err) {
       setAppError(
@@ -310,6 +314,17 @@ function App() {
   function openDeleteDialog(
     movie: MovieDetail
   ) {
+    if (
+      !user ||
+      movie.created_by_user_id !==
+        user.id
+    ) {
+      setAppError(
+        "Você só pode excluir filmes adicionados por você."
+      );
+      return;
+    }
+
     setMovieToDelete(movie);
     setDeleteError("");
   }
@@ -331,12 +346,20 @@ function App() {
       return;
     }
 
+    if (!token) {
+      setDeleteError(
+        "Entre na sua conta para excluir este filme."
+      );
+      return;
+    }
+
     setDeleting(true);
     setDeleteError("");
 
     try {
       await deleteMovie(
-        movieToDelete.sk_movie_id
+        movieToDelete.sk_movie_id,
+        token
       );
 
       setMovieToDelete(null);
@@ -686,9 +709,6 @@ function App() {
             setShowCreateForm(
               true
             )
-          }
-          onSearch={
-            searchCatalog
           }
         />
       )}

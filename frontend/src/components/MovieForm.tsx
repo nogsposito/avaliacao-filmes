@@ -1,5 +1,6 @@
 
 import { useState, type FormEvent } from "react";
+import { useAuth } from "../auth/AuthContext";
 
 import GenreInput from "./GenreInput";
 
@@ -22,6 +23,7 @@ function MovieForm({
   movie,
 }: MovieFormProps) {
   const editing = Boolean(movie);
+  const { token } = useAuth();
 
   const directors = movie?.people.filter(
     (person) => person.tipo_pessoa === "Diretor"
@@ -74,9 +76,22 @@ function MovieForm({
     setSaving(true);
 
     try {
+      if (!token) {
+        throw new Error(
+          "Entre na sua conta para adicionar ou editar filmes."
+        );
+      }
+
       const savedMovie = movie
-        ? await updateMovie(movie.sk_movie_id, data)
-        : await createMovie(data);
+        ? await updateMovie(
+            movie.sk_movie_id,
+            data,
+            token
+          )
+        : await createMovie(
+            data,
+            token
+          );
 
       onSaved(savedMovie);
     } catch (error) {

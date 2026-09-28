@@ -505,60 +505,66 @@ async def get_movie(
 async def create_movie(
     data: MovieCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    async with db.begin():
-        movie = DimMovie(
-            id_filme=uuid4().hex,
-            titulo=data.titulo,
-            ano_lancamento=data.ano_lancamento,
-            sinopse=data.sinopse,
-            duracao_minutos=data.duracao_minutos,
-            url_poster=data.url_poster,
+    movie = DimMovie(
+        id_filme=uuid4().hex,
+        titulo=data.titulo,
+        ano_lancamento=data.ano_lancamento,
+        sinopse=data.sinopse,
+        duracao_minutos=data.duracao_minutos,
+        url_poster=data.url_poster,
+        created_by_user_id=current_user.id,
+    )
+
+    db.add(movie)
+
+    # Reutiliza o diretor caso ele já exista.
+    result = await db.execute(
+        select(DimPerson).where(
+            func.lower(DimPerson.nome_pessoa)
+            == data.diretor.lower(),
+            DimPerson.tipo_pessoa == "Diretor",
         )
+    )
 
-        db.add(movie)
+    diretor = result.scalar_one_or_none()
 
-        # Reutiliza o diretor caso ele já esteja cadastrado.
+    if diretor is None:
+        diretor = DimPerson(
+            nome_pessoa=data.diretor,
+            tipo_pessoa="Diretor",
+        )
+        db.add(diretor)
+
+    movie.people.append(diretor)
+
+    # Reutiliza os gêneros existentes.
+    for nome in data.generos:
         result = await db.execute(
-            select(DimPerson).where(
-                func.lower(DimPerson.nome_pessoa)
-                == data.diretor.lower(),
-                DimPerson.tipo_pessoa == "Diretor",
+            select(DimGenre).where(
+                func.lower(DimGenre.nome_genero)
+                == nome.lower()
             )
         )
 
-        diretor = result.scalar_one_or_none()
+        genero = result.scalar_one_or_none()
 
-        if diretor is None:
-            diretor = DimPerson(
-                nome_pessoa=data.diretor,
-                tipo_pessoa="Diretor",
+        if genero is None:
+            genero = DimGenre(
+                nome_genero=nome
             )
-            db.add(diretor)
+            db.add(genero)
 
-        movie.people.append(diretor)
+        movie.genres.append(genero)
 
-        # Reutiliza os gêneros existentes.
-        for nome in data.generos:
-            result = await db.execute(
-                select(DimGenre).where(
-                    func.lower(DimGenre.nome_genero)
-                    == nome.lower()
-                )
-            )
+    # Salva tudo usando a transação
+    # que a sessão já possui.
+    await db.commit()
 
-            genero = result.scalar_one_or_none()
+    movie_id = movie.sk_movie_id
 
-            if genero is None:
-                genero = DimGenre(nome_genero=nome)
-                db.add(genero)
-
-            movie.genres.append(genero)
-
-        await db.flush()
-        movie_id = movie.sk_movie_id
-
-    # Busca novamente o filme com os relacionamentos carregados.
+    # Busca novamente com os relacionamentos carregados.
     result = await db.execute(
         select(DimMovie)
         .options(
@@ -567,13 +573,14 @@ async def create_movie(
             selectinload(DimMovie.people),
             selectinload(DimMovie.reviews),
         )
-        .where(DimMovie.sk_movie_id == movie_id)
+        .where(
+            DimMovie.sk_movie_id == movie_id
+        )
     )
 
     movie = result.scalar_one()
 
     return format_movie_detail(movie)
-
 
 
 # Atualiza uma avaliação pertencente ao usuário autenticado.
@@ -617,6 +624,172 @@ async def update_review(
 
     return format_review(review)
 
+# Deleta uma avaliação pertencente ao usuário autenticado.
+@router.patch(
+    "/{movie_id}",
+    response_model=MovieDetail,
+)
+async def update_movie(
+    movie_id: str,
+    data: MovieUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(DimMovie)
+        .options(
+            selectinload(
+                DimMovie.genres
+            ),
+            selectinload(
+                DimMovie.companies
+            ),
+            selectinload(
+                DimMovie.people
+            ),
+            selectinload(
+                DimMovie.reviews
+            ),
+        )
+        .where(
+            DimMovie.sk_movie_id
+            == movie_id
+        )
+    )
+
+    movie = result.scalar_one_or_none()
+
+    if movie is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Filme não encontrado.",
+        )
+
+    if (
+        movie.created_by_user_id
+        != current_user.id
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Você só pode editar "
+                "filmes adicionados por você."
+            ),
+        )
+
+    values = data.model_dump(
+        exclude_unset=True
+    )
+
+    if "titulo" in values:
+        movie.titulo = values["titulo"]
+
+    if "ano_lancamento" in values:
+        movie.ano_lancamento = (
+            values["ano_lancamento"]
+        )
+
+    if "sinopse" in values:
+        movie.sinopse = values["sinopse"]
+
+    if "duracao_minutos" in values:
+        movie.duracao_minutos = (
+            values["duracao_minutos"]
+        )
+
+    if "url_poster" in values:
+        movie.url_poster = (
+            values["url_poster"]
+        )
+
+    if "diretor" in values:
+        movie.people = [
+            person
+            for person in movie.people
+            if person.tipo_pessoa
+            != "Diretor"
+        ]
+
+        result = await db.execute(
+            select(DimPerson).where(
+                func.lower(
+                    DimPerson.nome_pessoa
+                )
+                == values[
+                    "diretor"
+                ].lower(),
+                DimPerson.tipo_pessoa
+                == "Diretor",
+            )
+        )
+
+        diretor = (
+            result.scalar_one_or_none()
+        )
+
+        if diretor is None:
+            diretor = DimPerson(
+                nome_pessoa=values[
+                    "diretor"
+                ],
+                tipo_pessoa="Diretor",
+            )
+            db.add(diretor)
+
+        movie.people.append(diretor)
+
+    if "generos" in values:
+        movie.genres.clear()
+
+        for nome in values["generos"]:
+            result = await db.execute(
+                select(DimGenre).where(
+                    func.lower(
+                        DimGenre.nome_genero
+                    )
+                    == nome.lower()
+                )
+            )
+
+            genero = (
+                result.scalar_one_or_none()
+            )
+
+            if genero is None:
+                genero = DimGenre(
+                    nome_genero=nome
+                )
+                db.add(genero)
+
+            movie.genres.append(genero)
+
+    await db.commit()
+
+    result = await db.execute(
+        select(DimMovie)
+        .options(
+            selectinload(
+                DimMovie.genres
+            ),
+            selectinload(
+                DimMovie.companies
+            ),
+            selectinload(
+                DimMovie.people
+            ),
+            selectinload(
+                DimMovie.reviews
+            ),
+        )
+        .where(
+            DimMovie.sk_movie_id
+            == movie_id
+        )
+    )
+
+    movie = result.scalar_one()
+
+    return format_movie_detail(movie)
 
 @router.delete(
     "/{movie_id}",

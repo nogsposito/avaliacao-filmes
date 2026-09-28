@@ -18,6 +18,7 @@ class MovieOut(BaseModel):
     sinopse: str | None
     url_poster: str | None
     url_backdrop: str | None
+    created_by_user_id: str | None = None
 
 # Resultado de uma consulta paginada.
 class PaginatedMovies(BaseModel):
