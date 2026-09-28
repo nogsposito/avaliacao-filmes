@@ -115,19 +115,18 @@ async def get_home_categories(
 ):
     import random
 
+    # Busca uma quantidade limitada de filmes
+    # para montar a home.
     result = await db.execute(
         select(DimMovie)
         .options(
-            selectinload(
-                DimMovie.genres
-            )
+            selectinload(DimMovie.genres)
         )
         .where(
-            DimMovie.url_poster.is_not(
-                None
-            ),
+            DimMovie.url_poster.is_not(None),
             DimMovie.url_poster != "",
         )
+        .limit(500)
     )
 
     movies = list(
@@ -136,14 +135,9 @@ async def get_home_categories(
 
     categories = []
 
-    # -------------------------
     # GÊNEROS
-    # -------------------------
 
-    genres: dict[
-        str,
-        list[DimMovie],
-    ] = {}
+    genres = {}
 
     for movie in movies:
         for genre in movie.genres:
@@ -152,13 +146,14 @@ async def get_home_categories(
                 [],
             ).append(movie)
 
-    for genre_name, genre_movies in (
-        genres.items()
-    ):
+    for genre_name, genre_movies in genres.items():
         if len(genre_movies) < 3:
             continue
 
-        random.shuffle(genre_movies)
+        selected_movies = random.sample(
+            genre_movies,
+            min(20, len(genre_movies)),
+        )
 
         categories.append(
             {
@@ -170,19 +165,13 @@ async def get_home_categories(
                 ),
                 "title": genre_name,
                 "movies": [
-                    MovieOut.model_validate(
-                        movie
-                    )
-                    for movie in (
-                        genre_movies[:20]
-                    )
+                    MovieOut.model_validate(movie)
+                    for movie in selected_movies
                 ],
             }
         )
 
-    # -------------------------
     # DÉCADAS
-    # -------------------------
 
     decades = [
         (2020, 2029, "Anos 2020"),
@@ -200,8 +189,7 @@ async def get_home_categories(
             movie
             for movie in movies
             if (
-                movie.ano_lancamento
-                is not None
+                movie.ano_lancamento is not None
                 and start
                 <= movie.ano_lancamento
                 <= end
@@ -211,106 +199,56 @@ async def get_home_categories(
         if len(decade_movies) < 3:
             continue
 
-        random.shuffle(decade_movies)
+        selected_movies = random.sample(
+            decade_movies,
+            min(20, len(decade_movies)),
+        )
 
         categories.append(
             {
                 "id": f"decade-{start}",
                 "title": title,
                 "movies": [
-                    MovieOut.model_validate(
-                        movie
-                    )
-                    for movie in (
-                        decade_movies[:20]
-                    )
+                    MovieOut.model_validate(movie)
+                    for movie in selected_movies
                 ],
             }
         )
 
-    # -------------------------
-    # FILMES RECENTES
-    # -------------------------
-
-    recent_movies = [
-        movie
-        for movie in movies
-        if (
-            movie.ano_lancamento
-            is not None
-            and movie.ano_lancamento
-            >= 2020
-        )
-    ]
-
-    if len(recent_movies) >= 3:
-        random.shuffle(recent_movies)
-
-        categories.append(
-            {
-                "id": "recent",
-                "title": "Filmes recentes",
-                "movies": [
-                    MovieOut.model_validate(
-                        movie
-                    )
-                    for movie in (
-                        recent_movies[:20]
-                    )
-                ],
-            }
-        )
-
-    # -------------------------
     # CLÁSSICOS
-    # -------------------------
 
     classic_movies = [
         movie
         for movie in movies
         if (
-            movie.ano_lancamento
-            is not None
-            and movie.ano_lancamento
-            < 1980
+            movie.ano_lancamento is not None
+            and movie.ano_lancamento < 1980
         )
     ]
 
     if len(classic_movies) >= 3:
-        random.shuffle(classic_movies)
+        selected_movies = random.sample(
+            classic_movies,
+            min(20, len(classic_movies)),
+        )
 
         categories.append(
             {
                 "id": "classics",
                 "title": "Clássicos",
                 "movies": [
-                    MovieOut.model_validate(
-                        movie
-                    )
-                    for movie in (
-                        classic_movies[:20]
-                    )
+                    MovieOut.model_validate(movie)
+                    for movie in selected_movies
                 ],
             }
         )
 
-    # Evita categorias vazias e
-    # escolhe somente algumas para
-    # cada carregamento da home.
+    # Escolhe até 10 categorias.
 
-    if len(categories) <= limit:
-        selected_categories = (
-            categories
-        )
-    else:
-        selected_categories = (
-            random.sample(
-                categories,
-                limit,
-            )
-        )
-
-    return selected_categories
+    return random.sample(
+        categories,
+        min(limit, len(categories)),
+    )
 
 # Retorna uma seleção variada de filmes para a tela inicial.
 @router.get("/featured", response_model=list[MovieOut])

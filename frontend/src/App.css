@@ -1823,16 +1823,13 @@ input::placeholder, textarea::placeholder { color: #929b97; }
 }
 
 /* ===== Carrosséis horizontais ===== */
+/* ===== Carrosséis horizontais ===== */
 
 .movie-carousel-section {
   margin-top: 3rem;
 }
 
 .movie-carousel-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
   margin-bottom: 1rem;
 }
 
@@ -1841,72 +1838,36 @@ input::placeholder, textarea::placeholder { color: #929b97; }
   font-size: 1.5rem;
 }
 
-.carousel-controls {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.carousel-controls button {
-  width: 38px;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border: 1px solid var(--border);
-  border-radius: 50%;
-
-  background: var(--surface);
-  color: var(--text);
-
-  font-size: 1.6rem;
-  line-height: 1;
-
-  transition:
-    background var(--transition),
-    border-color var(--transition),
-    transform var(--transition);
-}
-
-.carousel-controls button:hover {
-  background: var(--surface-raised);
-  border-color: var(--muted);
-  transform: scale(1.05);
+.movie-carousel-wrapper {
+  position: relative;
 }
 
 .movie-carousel {
   display: flex;
-  gap: 1rem;
+  justify-content: flex-start;
+  gap: 16px;
+
+  width: 100%;
 
   overflow-x: auto;
   overflow-y: hidden;
 
   scroll-behavior: smooth;
-  scroll-snap-type: x proximity;
+  scroll-snap-type: x mandatory;
 
-  padding-bottom: 0.8rem;
-
-  scrollbar-width: thin;
-  scrollbar-color:
-    var(--border)
-    transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .movie-carousel::-webkit-scrollbar {
-  height: 7px;
+  display: none;
 }
 
-.movie-carousel::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.movie-carousel::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 999px;
-}
+/* ===== Cards ===== */
 
 .carousel-movie-card {
-  flex: 0 0 185px;
+  flex: 0 0 170px;
+  width: 170px;
 
   scroll-snap-align: start;
 
@@ -1920,8 +1881,8 @@ input::placeholder, textarea::placeholder { color: #929b97; }
 }
 
 .carousel-movie-poster {
-  width: 100%;
-  aspect-ratio: 2 / 3;
+  width: 170px;
+  height: 255px;
 
   overflow: hidden;
 
@@ -1932,6 +1893,7 @@ input::placeholder, textarea::placeholder { color: #929b97; }
 .carousel-movie-poster img {
   width: 100%;
   height: 100%;
+
   display: block;
 
   object-fit: cover;
@@ -1945,7 +1907,124 @@ input::placeholder, textarea::placeholder { color: #929b97; }
   transform: scale(1.035);
 }
 
-.carousel-movie-poster span {
+.carousel-movie-info {
+  width: 170px;
+  margin-top: 0.65rem;
+}
+
+.carousel-movie-info h3 {
+  margin: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-size: 0.95rem;
+}
+
+.carousel-movie-info span {
+  display: block;
+
+  margin-top: 0.2rem;
+
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* ===== Setas ===== */
+
+.carousel-arrow {
+  position: absolute;
+  z-index: 5;
+
+  top: 127px;
+
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid var(--border);
+  border-radius: 50%;
+
+  background: rgba(20, 20, 20, 0.9);
+  color: white;
+
+  font-size: 2rem;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transform: translateY(-50%);
+
+  transition:
+    transform var(--transition),
+    background var(--transition);
+}
+
+.carousel-arrow:hover {
+  transform:
+    translateY(-50%)
+    scale(1.08);
+}
+
+.carousel-arrow-left {
+  left: -20px;
+}
+
+.carousel-arrow-right {
+  right: -20px;
+}
+
+/* ===== Avaliações recentes ===== */
+
+/* ===== Avaliações recentes ===== */
+
+.carousel-review-card {
+  flex: 0 0 170px;
+  width: 170px;
+
+  padding: 0;
+  border: 0;
+
+  background: transparent;
+  color: inherit;
+
+  text-align: left;
+
+  scroll-snap-align: start;
+}
+
+.carousel-review-poster {
+  width: 170px;
+  height: 255px;
+
+  overflow: hidden;
+
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.carousel-review-poster img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+
+  transition:
+    transform var(--transition);
+}
+
+.carousel-review-card:hover
+.carousel-review-poster img {
+  transform: scale(1.035);
+}
+
+.carousel-review-poster span {
   width: 100%;
   height: 100%;
 
@@ -1956,29 +2035,105 @@ input::placeholder, textarea::placeholder { color: #929b97; }
   color: var(--muted);
 }
 
-.carousel-movie-info {
+.carousel-review-info {
   margin-top: 0.65rem;
 }
 
-.carousel-movie-info h3 {
+.carousel-review-info h3 {
   margin: 0;
 
   overflow: hidden;
-
-  font-size: 0.95rem;
-  line-height: 1.25;
-
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  font-size: 0.95rem;
 }
 
-.carousel-movie-info span {
-  display: block;
+.carousel-review-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 
-  margin-top: 0.2rem;
+  gap: 0.4rem;
+
+  margin-top: 0.35rem;
+
+  font-size: 0.78rem;
+}
+
+.carousel-review-meta strong {
+  color: var(--accent);
+}
+
+.carousel-review-meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
   color: var(--muted);
+}
+
+.carousel-review-info p {
+  display: -webkit-box;
+
+  margin:
+    0.45rem 0
+    0;
+
+  overflow: hidden;
+
+  color: var(--muted);
+
   font-size: 0.8rem;
+  line-height: 1.35;
+
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ===== Mobile ===== */
+
+@media (max-width: 700px) {
+  .carousel-movie-card {
+    flex-basis: 145px;
+    width: 145px;
+  }
+
+  .carousel-movie-poster {
+    width: 145px;
+    height: 218px;
+  }
+
+  .carousel-movie-info {
+    width: 145px;
+  }
+
+  .carousel-arrow {
+    display: none;
+  }
+
+  .carousel-review-card {
+    flex-basis: 310px;
+    height: 218px;
+  }
+
+  .carousel-review-card
+  .recent-review-poster {
+    flex-basis: 145px;
+
+    width: 145px;
+    height: 218px;
+  }
+
+  .carousel-review-card {
+    flex-basis: 145px;
+    width: 145px;
+  }
+
+  .carousel-review-poster {
+    width: 145px;
+    height: 218px;
+  }
 }
 
 /* ===== Link para catálogo completo ===== */
@@ -2039,5 +2194,123 @@ input::placeholder, textarea::placeholder { color: #929b97; }
 
   .carousel-controls {
     display: none;
+  }
+}
+
+/* ===== Home com carrosséis ===== */
+
+.carousel-review-card {
+  flex: 0 0 360px;
+  scroll-snap-align: start;
+}
+
+.carousel-review-card
+.recent-review-poster {
+  flex-shrink: 0;
+}
+
+@media (max-width: 700px) {
+  .carousel-review-card {
+    flex-basis: 300px;
+  }
+}
+
+/* ===== Catálogo completo ===== */
+
+.full-catalog-header {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.full-catalog-header h1 {
+  margin:
+    0.25rem 0
+    0.5rem;
+}
+
+.full-catalog-header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.movie-carousel > .carousel-review-card {
+  flex: 0 0 170px;
+  width: 170px;
+  min-width: 170px;
+  max-width: 170px;
+
+  margin: 0;
+}
+
+
+/* ===== Pesquisa da navbar ===== */
+
+.nav-search {
+  width: min(360px, 30vw);
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+
+  margin-left: 1.5rem;
+
+  overflow: hidden;
+
+  border: 1px solid var(--border);
+  border-radius: 999px;
+
+  background: var(--surface);
+}
+
+.nav-search input {
+  min-width: 0;
+  flex: 1;
+
+  padding: 0 0 0 1rem;
+
+  border: 0;
+  outline: 0;
+
+  background: transparent;
+  color: var(--text);
+
+  font: inherit;
+}
+
+.nav-search input::placeholder {
+  color: var(--muted);
+}
+
+.nav-search button {
+  width: 44px;
+  height: 44px;
+
+  flex-shrink: 0;
+
+  border: 0;
+  background: transparent;
+  color: var(--text);
+
+  font-size: 1.2rem;
+
+  cursor: pointer;
+}
+
+.nav-search:focus-within {
+  border-color: var(--accent);
+}
+
+@media (max-width: 800px) {
+  .nav-search {
+    width: 100%;
+    order: 3;
+
+    margin:
+      0.75rem 0
+      0;
+  }
+
+  .site-nav {
+    flex-wrap: wrap;
   }
 }

@@ -1,29 +1,74 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import { useAuth } from "./auth/AuthContext";
 
+import AccountPage from "./components/AccountPage";
 import DeleteMovieDialog from "./components/DeleteMovieDialog";
+import FullCatalogPage from "./components/FullCatalogPage";
+import HomePage from "./components/HomePage";
 import LoginPage from "./components/LoginPage";
 import MovieDetails from "./components/MovieDetails";
 import MovieForm from "./components/MovieForm";
 import MovieLoader from "./components/MovieLoader";
 import RegisterPage from "./components/RegisterPage";
-import AccountPage from "./components/AccountPage";
 
 import {
   deleteMovie,
-  getFeaturedMovies,
   getMovie,
-  getMovies,
-  getRecentReviews,
-  type Movie,
   type MovieDetail,
-  type RecentReview,
 } from "./services/movies";
 
 import "./App.css";
 
-type AuthScreen = "login" | "register" | null;
+type AuthScreen =
+  | "login"
+  | "register"
+  | null;
+
+type AppScreen =
+  | "home"
+  | "catalog"
+  | "account"
+  | "movie";
+
+function getScreenFromPath(): AppScreen {
+  const path =
+    window.location.pathname;
+
+  if (path === "/catalog") {
+    return "catalog";
+  }
+
+  if (path === "/account") {
+    return "account";
+  }
+
+  if (
+    /^\/movies\/([^/]+)\/?$/.test(
+      path
+    )
+  ) {
+    return "movie";
+  }
+
+  return "home";
+}
+
+function getMovieIdFromPath():
+  | string
+  | null {
+  const match =
+    window.location.pathname.match(
+      /^\/movies\/([^/]+)\/?$/
+    );
+
+  return match
+    ? decodeURIComponent(match[1])
+    : null;
+}
 
 function App() {
   const {
@@ -32,76 +77,187 @@ function App() {
     signOut,
   } = useAuth();
 
-  const [authScreen, setAuthScreen] =
+  const [screen, setScreen] =
+    useState<AppScreen>(
+      getScreenFromPath
+    );
+
+  const [
+    selectedMovieId,
+    setSelectedMovieId,
+  ] = useState<string | null>(
+    getMovieIdFromPath
+  );
+
+  const [
+    authScreen,
+    setAuthScreen,
+  ] =
     useState<AuthScreen>(null);
 
-  const [accountMenuOpen, setAccountMenuOpen] =
-    useState(false);
+  const [
+    accountMenuOpen,
+    setAccountMenuOpen,
+  ] = useState(false);
 
-  const [movies, setMovies] = useState<Movie[]>([]);
+  const [
+    editingMovie,
+    setEditingMovie,
+  ] =
+    useState<MovieDetail | null>(
+      null
+    );
 
-  const [catalogSeed] = useState(() =>
-    Math.floor(Math.random() * 100000)
-  );
+  const [
+    movieToDelete,
+    setMovieToDelete,
+  ] =
+    useState<MovieDetail | null>(
+      null
+    );
 
-  const [featuredMovies, setFeaturedMovies] =
-    useState<Movie[]>([]);
+  const [
+    showCreateForm,
+    setShowCreateForm,
+  ] = useState(false);
 
-  const [recentReviews, setRecentReviews] =
-    useState<RecentReview[]>([]);
+  const [
+    deleting,
+    setDeleting,
+  ] = useState(false);
 
-  const [selectedMovieId, setSelectedMovieId] =
-    useState<string | null>(() => {
-      const match = window.location.pathname.match(
-        /^\/movies\/([^/]+)\/?$/
-      );
+  const [
+    deleteError,
+    setDeleteError,
+  ] = useState("");
 
-      return match
-        ? decodeURIComponent(match[1])
-        : null;
-    });
+  const [
+    appError,
+    setAppError,
+  ] = useState("");
 
-  const [showAccount, setShowAccount] = useState(
-    window.location.pathname === "/account"
-  );
+  const [
+    refreshKey,
+    setRefreshKey,
+  ] = useState(0);
 
-  function openAccount() {
-    window.history.pushState({}, "", "/account");
-    setSelectedMovieId(null);
-    setShowAccount(true);
-    setAccountMenuOpen(false);
-  }
+  // Pesquisa que será enviada da Home
+  // para o catálogo completo.
+  const [
+    catalogSearch,
+    setCatalogSearch,
+  ] = useState("");
 
-  function openMovie(movieId: string) {
+  function navigate(
+    path: string,
+    nextScreen: AppScreen
+  ) {
     window.history.pushState(
       {},
       "",
-      `/movies/${encodeURIComponent(movieId)}`
+      path
+    );
+
+    setScreen(nextScreen);
+
+    setSelectedMovieId(
+      nextScreen === "movie"
+        ? getMovieIdFromPath()
+        : null
+    );
+
+    setAccountMenuOpen(false);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
+  function openHome() {
+    setAuthScreen(null);
+    setEditingMovie(null);
+    setShowCreateForm(false);
+
+    // Ao voltar para a Home,
+    // limpa a pesquisa anterior.
+    setCatalogSearch("");
+
+    navigate(
+      "/",
+      "home"
+    );
+  }
+
+  function openCatalog() {
+    setAuthScreen(null);
+    setEditingMovie(null);
+    setShowCreateForm(false);
+
+    // Abrindo pelo botão "Catálogo completo",
+    // mostramos todos os filmes.
+    setCatalogSearch("");
+
+    navigate(
+      "/catalog",
+      "catalog"
+    );
+  }
+
+  function searchCatalog(
+    search: string
+  ) {
+    setCatalogSearch(search);
+
+    navigate(
+      "/catalog",
+      "catalog"
+    );
+  }
+
+  function openAccount() {
+    navigate(
+      "/account",
+      "account"
+    );
+  }
+
+  function openMovie(
+    movieId: string
+  ) {
+    window.history.pushState(
+      {},
+      "",
+      `/movies/${encodeURIComponent(
+        movieId
+      )}`
     );
 
     setSelectedMovieId(movieId);
-    setShowAccount(false);
-  }
+    setScreen("movie");
+    setAccountMenuOpen(false);
 
-  function closeMovie() {
-    window.history.pushState({}, "", "/");
-    setSelectedMovieId(null);
-    setShowAccount(false);
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   }
 
   useEffect(() => {
     function handlePopState() {
-      const match = window.location.pathname.match(
-        /^\/movies\/([^/]+)\/?$/
-      );
+      const nextScreen =
+        getScreenFromPath();
+
+      setScreen(nextScreen);
 
       setSelectedMovieId(
-        match ? decodeURIComponent(match[1]) : null
+        getMovieIdFromPath()
       );
 
-      setShowAccount(
-        window.location.pathname === "/account"
-      );
+      setAuthScreen(null);
+      setEditingMovie(null);
+      setShowCreateForm(false);
+      setAccountMenuOpen(false);
     }
 
     window.addEventListener(
@@ -117,126 +273,18 @@ function App() {
     };
   }, []);
 
-  const [editingMovie, setEditingMovie] =
-    useState<MovieDetail | null>(null);
+  async function handleEdit(
+    movieId: string
+  ) {
+    setAppError("");
 
-  const [movieToDelete, setMovieToDelete] =
-    useState<MovieDetail | null>(null);
-
-  const [showCreateForm, setShowCreateForm] =
-    useState(false);
-
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [total, setTotal] = useState(0);
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState("");
-
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadFeaturedMovies() {
-      try {
-        const data = await getFeaturedMovies(6);
-
-        if (active) {
-          setFeaturedMovies(data);
-        }
-      } catch (err) {
-        console.error(
-          "Erro ao carregar filmes em destaque:",
-          err
-        );
-      }
-    }
-
-    loadFeaturedMovies();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadRecentReviews() {
-      try {
-        const data = await getRecentReviews(6);
-
-        if (active) {
-          setRecentReviews(data);
-        }
-      } catch (err) {
-        console.error(
-          "Erro ao carregar avaliações recentes:",
-          err
-        );
-      }
-    }
-
-    loadRecentReviews();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadMovies() {
-      setLoading(true);
-      setError("");
-
-      try {
-        const data = await getMovies(
-          page,
-          12,
-          search,
-          catalogSeed
-        );
-
-        if (!active) return;
-
-        setMovies(data.items);
-        setTotalPages(data.total_pages);
-        setTotal(data.total);
-      } catch (err) {
-        if (active) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Erro ao carregar os filmes."
-          );
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadMovies();
-
-    return () => {
-      active = false;
-    };
-  }, [page, search, refreshKey, catalogSeed]);
-
-  async function handleEdit(movieId: string) {
     try {
-      const movie = await getMovie(movieId);
+      const movie =
+        await getMovie(movieId);
+
       setEditingMovie(movie);
     } catch (err) {
-      setError(
+      setAppError(
         err instanceof Error
           ? err.message
           : "Erro ao carregar o filme."
@@ -244,27 +292,44 @@ function App() {
     }
   }
 
-  function handleSaved(movie: MovieDetail) {
+  function handleSaved(
+    movie: MovieDetail
+  ) {
     setEditingMovie(null);
     setShowCreateForm(false);
-    openMovie(movie.sk_movie_id);
-    setRefreshKey((value) => value + 1);
+
+    openMovie(
+      movie.sk_movie_id
+    );
+
+    setRefreshKey(
+      (value) => value + 1
+    );
   }
 
-  function openDeleteDialog(movie: MovieDetail) {
+  function openDeleteDialog(
+    movie: MovieDetail
+  ) {
     setMovieToDelete(movie);
     setDeleteError("");
   }
 
   function closeDeleteDialog() {
-    if (deleting) return;
+    if (deleting) {
+      return;
+    }
 
     setMovieToDelete(null);
     setDeleteError("");
   }
 
   async function handleDelete() {
-    if (!movieToDelete || deleting) return;
+    if (
+      !movieToDelete ||
+      deleting
+    ) {
+      return;
+    }
 
     setDeleting(true);
     setDeleteError("");
@@ -277,11 +342,10 @@ function App() {
       setMovieToDelete(null);
       setSelectedMovieId(null);
 
-      if (page !== 1) {
-        setPage(1);
-      } else {
-        setRefreshKey((value) => value + 1);
-      }
+      navigate(
+        "/catalog",
+        "catalog"
+      );
     } catch (err) {
       setDeleteError(
         err instanceof Error
@@ -301,13 +365,10 @@ function App() {
   function handleSignOut() {
     signOut();
     setAccountMenuOpen(false);
-  }
 
-  function goToCatalog() {
-    setAuthScreen(null);
-    closeMovie();
-    setEditingMovie(null);
-    setShowCreateForm(false);
+    if (screen === "account") {
+      openHome();
+    }
   }
 
   if (authLoading) {
@@ -321,21 +382,35 @@ function App() {
   if (authScreen === "login") {
     return (
       <LoginPage
-        onBack={() => setAuthScreen(null)}
-        onRegister={() =>
-          setAuthScreen("register")
+        onBack={() =>
+          setAuthScreen(null)
         }
-        onSuccess={handleAuthSuccess}
+        onRegister={() =>
+          setAuthScreen(
+            "register"
+          )
+        }
+        onSuccess={
+          handleAuthSuccess
+        }
       />
     );
   }
 
-  if (authScreen === "register") {
+  if (
+    authScreen === "register"
+  ) {
     return (
       <RegisterPage
-        onBack={() => setAuthScreen(null)}
-        onLogin={() => setAuthScreen("login")}
-        onSuccess={handleAuthSuccess}
+        onBack={() =>
+          setAuthScreen(null)
+        }
+        onLogin={() =>
+          setAuthScreen("login")
+        }
+        onSuccess={
+          handleAuthSuccess
+        }
       />
     );
   }
@@ -343,9 +418,13 @@ function App() {
   if (editingMovie) {
     return (
       <MovieForm
-        key={editingMovie.sk_movie_id}
+        key={
+          editingMovie.sk_movie_id
+        }
         movie={editingMovie}
-        onCancel={() => setEditingMovie(null)}
+        onCancel={() =>
+          setEditingMovie(null)
+        }
         onSaved={handleSaved}
       />
     );
@@ -362,41 +441,62 @@ function App() {
     );
   }
 
-  if (showAccount) {
+  if (
+    screen === "account"
+  ) {
     return (
       <AccountPage
-        onBack={closeMovie}
+        onBack={openHome}
         onOpenMovie={openMovie}
       />
     );
   }
 
-  if (selectedMovieId) {
+  if (
+    screen === "movie" &&
+    selectedMovieId
+  ) {
     return (
       <>
         <MovieDetails
           key={refreshKey}
-          movieId={selectedMovieId}
-          onBack={closeMovie}
-          onEdit={() =>
-            handleEdit(selectedMovieId)
+          movieId={
+            selectedMovieId
           }
-          onDelete={openDeleteDialog}
+          onBack={openHome}
+          onEdit={() =>
+            handleEdit(
+              selectedMovieId
+            )
+          }
+          onDelete={
+            openDeleteDialog
+          }
           onLogin={() =>
-            setAuthScreen("login")
+            setAuthScreen(
+              "login"
+            )
           }
           onRegister={() =>
-            setAuthScreen("register")
+            setAuthScreen(
+              "register"
+            )
           }
         />
 
         {movieToDelete && (
           <DeleteMovieDialog
-            movieTitle={movieToDelete.titulo}
+            movieTitle={
+              movieToDelete.titulo
+            }
             deleting={deleting}
             error={deleteError}
-            onCancel={closeDeleteDialog}
-            onConfirm={handleDelete}
+            onCancel={
+              closeDeleteDialog
+            }
+            onConfirm={
+              handleDelete
+            }
           />
         )}
       </>
@@ -412,14 +512,52 @@ function App() {
         <button
           type="button"
           className="site-brand"
-          onClick={goToCatalog}
+          onClick={openHome}
         >
           <span className="site-brand-mark">
             ▶
           </span>
 
-          <span>ROCKETLAB FILMES</span>
+          <span>
+            ROCKETLAB FILMES
+          </span>
         </button>
+
+        <form
+          className="nav-search"
+          onSubmit={(event) => {
+            event.preventDefault();
+
+            const form =
+              event.currentTarget;
+
+            const input =
+              form.elements.namedItem(
+                "movie-search"
+              ) as HTMLInputElement;
+
+            const value =
+              input.value.trim();
+
+            if (value) {
+              searchCatalog(value);
+            }
+          }}
+        >
+          <input
+            type="search"
+            name="movie-search"
+            aria-label="Pesquisar filmes"
+            placeholder="Pesquisar filmes..."
+          />
+
+          <button
+            type="submit"
+            aria-label="Pesquisar"
+          >
+            →
+          </button>
+        </form>
 
         <div className="site-nav-actions">
           {user ? (
@@ -427,11 +565,14 @@ function App() {
               <button
                 type="button"
                 className="account-trigger"
-                aria-expanded={accountMenuOpen}
+                aria-expanded={
+                  accountMenuOpen
+                }
                 aria-haspopup="true"
                 onClick={() =>
                   setAccountMenuOpen(
-                    (value) => !value
+                    (value) =>
+                      !value
                   )
                 }
               >
@@ -471,7 +612,9 @@ function App() {
                   <button
                     type="button"
                     className="account-logout"
-                    onClick={openAccount}
+                    onClick={
+                      openAccount
+                    }
                   >
                     Minha conta
                   </button>
@@ -479,11 +622,10 @@ function App() {
                   <button
                     type="button"
                     className="account-logout"
-                    onClick={handleSignOut}
+                    onClick={
+                      handleSignOut
+                    }
                   >
-                    <span aria-hidden="true">
-                      ↪
-                    </span>
                     Sair da conta
                   </button>
                 </div>
@@ -495,7 +637,9 @@ function App() {
                 type="button"
                 className="nav-login"
                 onClick={() =>
-                  setAuthScreen("login")
+                  setAuthScreen(
+                    "login"
+                  )
                 }
               >
                 Entrar
@@ -505,7 +649,9 @@ function App() {
                 type="button"
                 className="nav-register"
                 onClick={() =>
-                  setAuthScreen("register")
+                  setAuthScreen(
+                    "register"
+                  )
                 }
               >
                 Criar conta
@@ -515,280 +661,37 @@ function App() {
         </div>
       </nav>
 
-      <header className="header">
-        <div>
-          <p className="eyebrow">
-            DESCUBRA · AVALIE · COMPARTILHE
-          </p>
-
-          <h1>Seu universo de filmes.</h1>
-
-          <p className="subtitle">
-            Explore o catálogo, encontre novas
-            histórias e compartilhe o que achou.
-          </p>
-        </div>
-
-        <div className="header-actions">
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() =>
-              setShowCreateForm(true)
-            }
-          >
-            + Novo filme
-          </button>
-        </div>
-      </header>
-
-      {/* PESQUISA */}
-
-      <section className="toolbar">
-        <input
-          type="search"
-          aria-label="Pesquisar filmes"
-          placeholder="Pesquisar por título..."
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setPage(1);
-          }}
-        />
-
-        <span>
-          {total} filmes encontrados
-        </span>
-      </section>
-
-      {/* EM DESTAQUE */}
-
-      {featuredMovies.length > 0 &&
-        !search && (
-          <section className="featured-section">
-            <div className="featured-heading">
-              <div>
-                <p className="eyebrow">
-                  PARA DESCOBRIR
-                </p>
-
-                <h2>Em destaque</h2>
-              </div>
-            </div>
-
-            <div className="featured-grid">
-              {featuredMovies.map((movie) => (
-                <button
-                  type="button"
-                  className="featured-card"
-                  key={movie.sk_movie_id}
-                  onClick={() =>
-                    openMovie(
-                      movie.sk_movie_id
-                    )
-                  }
-                >
-                  <div className="featured-poster">
-                    {movie.url_poster ? (
-                      <img
-                        src={movie.url_poster}
-                        alt={`Pôster de ${movie.titulo}`}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <span>
-                        Sem pôster
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="featured-info">
-                    <h3>
-                      {movie.titulo}
-                    </h3>
-
-                    <span>
-                      {movie.ano_lancamento ??
-                        "Ano desconhecido"}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-      {/* AVALIAÇÕES RECENTES */}
-
-      {recentReviews.length > 0 &&
-        !search && (
-          <section className="recent-reviews-section">
-            <div className="recent-reviews-heading">
-              <div>
-                <p className="eyebrow">
-                  DA COMUNIDADE
-                </p>
-
-                <h2>
-                  Avaliações recentes
-                </h2>
-              </div>
-            </div>
-
-            <div className="recent-reviews-grid">
-              {recentReviews.map(
-                (review) => (
-                  <button
-                    type="button"
-                    className="recent-review-card"
-                    key={
-                      review.sk_movie_review_id
-                    }
-                    onClick={() =>
-                      openMovie(
-                        review.sk_movie_id
-                      )
-                    }
-                  >
-                    <div className="recent-review-poster">
-                      <img
-                        src={
-                          review.url_poster ??
-                          ""
-                        }
-                        alt={`Pôster de ${review.titulo}`}
-                        loading="lazy"
-                      />
-                    </div>
-
-                    <div className="recent-review-content">
-                      <h3>
-                        {review.titulo}
-                      </h3>
-
-                      <div className="recent-review-meta">
-                        <strong>
-                          {review.nome}
-                        </strong>
-
-                        <span>
-                          ★ {review.nota}/5
-                        </span>
-                      </div>
-
-                      <p>
-                        {review.comentario}
-                      </p>
-                    </div>
-                  </button>
-                )
-              )}
-            </div>
-          </section>
-        )}
-
-      {/* CATÁLOGO */}
-
-      <section className="catalog-heading">
-        <p className="eyebrow">
-          EXPLORE
-        </p>
-
-        <h2>Catálogo</h2>
-      </section>
-
-      {loading && <MovieLoader />}
-
-      {error && (
+      {appError && (
         <p
           className="error"
           role="alert"
         >
-          {error}
+          {appError}
         </p>
       )}
 
-      {!loading &&
-        !error &&
-        movies.length === 0 && (
-          <p>
-            Nenhum filme encontrado.
-          </p>
-        )}
-
-      {!loading && !error && (
-        <section className="movie-grid">
-          {movies.map((movie) => (
-            <button
-              type="button"
-              className="movie-card"
-              key={movie.sk_movie_id}
-              onClick={() =>
-                openMovie(movie.sk_movie_id)
-              }
-            >
-              <div className="poster">
-                {movie.url_poster ? (
-                  <img
-                    src={movie.url_poster}
-                    alt={`Pôster de ${movie.titulo}`}
-                    loading="lazy"
-                  />
-                ) : (
-                  <span>Sem pôster</span>
-                )}
-              </div>
-
-              <div className="movie-info">
-                <h2>
-                  {movie.titulo}
-                </h2>
-
-                <span>
-                  {movie.ano_lancamento ??
-                    "Ano desconhecido"}
-                </span>
-              </div>
-            </button>
-          ))}
-        </section>
+      {screen === "catalog" ? (
+        <FullCatalogPage
+          onBack={openHome}
+          onOpenMovie={openMovie}
+          initialSearch={
+            catalogSearch
+          }
+        />
+      ) : (
+        <HomePage
+          onOpenMovie={openMovie}
+          onOpenCatalog={openCatalog}
+          onCreateMovie={() =>
+            setShowCreateForm(
+              true
+            )
+          }
+          onSearch={
+            searchCatalog
+          }
+        />
       )}
-
-      {!loading &&
-        !error &&
-        totalPages > 1 && (
-          <nav
-            className="pagination"
-            aria-label="Paginação dos filmes"
-          >
-            <button
-              type="button"
-              disabled={page === 1}
-              onClick={() =>
-                setPage(page - 1)
-              }
-            >
-              Anterior
-            </button>
-
-            <span>
-              Página {page} de{" "}
-              {totalPages}
-            </span>
-
-            <button
-              type="button"
-              disabled={
-                page >= totalPages
-              }
-              onClick={() =>
-                setPage(page + 1)
-              }
-            >
-              Próxima
-            </button>
-          </nav>
-        )}
     </main>
   );
 }
