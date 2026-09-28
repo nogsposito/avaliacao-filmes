@@ -355,14 +355,13 @@ export async function updateReview(
   );
 
   if (!response.ok) {
-    if (response.status === 403) {
-      throw new Error(
-        "Você só pode editar suas próprias avaliações."
-      );
-    }
+    const body = await response
+      .json()
+      .catch(() => null);
 
     throw new Error(
-      `Não foi possível editar a avaliação (HTTP ${response.status}).`
+      body?.detail ??
+        "Não foi possível atualizar a avaliação."
     );
   }
 

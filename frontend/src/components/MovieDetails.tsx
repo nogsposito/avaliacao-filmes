@@ -184,6 +184,13 @@ function MovieDetails({
       new Date(a.created_at).getTime()
   );
 
+  const userReview = user
+    ? reviews.find(
+        (review) =>
+          review.user_id === user.id
+      ) ?? null
+    : null;
+
   return (
     <main className="container">
       <button
@@ -336,7 +343,7 @@ function MovieDetails({
         {user ? (
           <ReviewForm
             movieId={movie.sk_movie_id}
-            onCreated={() =>
+            onSaved={() =>
               setReviewsRefreshKey(
                 (value) => value + 1
               )

@@ -553,6 +553,26 @@ async def create_review(
             detail="Filme não encontrado",
         )
 
+    existing_review_result = await db.execute(
+        select(MovieReview).where(
+            MovieReview.sk_movie_id == movie_id,
+            MovieReview.user_id == current_user.id,
+        )
+    )
+
+    existing_review = (
+        existing_review_result.scalar_one_or_none()
+    )
+
+    if existing_review is not None:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Você já avaliou este filme. "
+                "Edite sua avaliação existente."
+            ),
+        )
+
     review = MovieReview(
         sk_movie_id=movie_id,
         user_id=current_user.id,
