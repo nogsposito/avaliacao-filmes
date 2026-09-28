@@ -38,6 +38,10 @@ function App() {
 
   const [movies, setMovies] = useState<Movie[]>([]);
 
+  const [catalogSeed] = useState(() =>
+    Math.floor(Math.random() * 100000)
+  );
+
   const [featuredMovies, setFeaturedMovies] =
     useState<Movie[]>([]);
 
@@ -188,7 +192,12 @@ function App() {
       setError("");
 
       try {
-        const data = await getMovies(page, 12, search);
+        const data = await getMovies(
+          page,
+          12,
+          search,
+          catalogSeed
+        );
 
         if (!active) return;
 
@@ -215,7 +224,7 @@ function App() {
     return () => {
       active = false;
     };
-  }, [page, search, refreshKey]);
+  }, [page, search, refreshKey, catalogSeed]);
 
   async function handleEdit(movieId: string) {
     try {

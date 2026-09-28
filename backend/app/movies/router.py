@@ -38,10 +38,16 @@ async def list_movies(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     search: str | None = Query(default=None),
+    seed: int | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ):
 
     query = select(DimMovie)
+
+    query = query.where(
+        DimMovie.url_poster.is_not(None),
+        DimMovie.url_poster != "",
+    )  
 
     if search and search.strip():
         query = query.where(
@@ -54,13 +60,22 @@ async def list_movies(
 
     total = (await db.execute(count_query)).scalar_one()
 
-    query = (
-        query
-        .order_by(
-            DimMovie.ano_lancamento.desc().nullslast(),
+    if seed is not None and not search:
+        query = query.order_by(
+            DimMovie.url_poster.is_(None),
+            DimMovie.url_poster == "",
+            func.abs(
+                func.random() + seed
+            )
+        )
+    else:
+        query = query.order_by(
             DimMovie.titulo,
             DimMovie.sk_movie_id,
         )
+
+    query = (
+        query
         .offset((page - 1) * page_size)
         .limit(page_size)
     )
@@ -88,10 +103,9 @@ async def get_featured_movies(
     # Seleciona primeiro um conjunto de filmes recentes.
     result = await db.execute(
         select(DimMovie)
-        .where(DimMovie.url_poster.is_not(None))
-        .order_by(
-            DimMovie.ano_lancamento.desc().nullslast(),
-            DimMovie.titulo,
+        .where(
+            DimMovie.url_poster.is_not(None),
+            DimMovie.url_poster != "",
         )
         .limit(30)
     )
@@ -127,7 +141,10 @@ async def get_recent_reviews(
             DimMovie,
             MovieReview.sk_movie_id == DimMovie.sk_movie_id,
         )
-        .where(DimMovie.url_poster.is_not(None))
+        .where(
+            DimMovie.url_poster.is_not(None),
+            DimMovie.url_poster != "",
+        )
         .order_by(MovieReview.created_at.desc())
         .limit(limit)
     )

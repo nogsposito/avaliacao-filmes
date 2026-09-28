@@ -70,13 +70,18 @@ export interface RecentReview {
 export async function getMovies(
   page = 1,
   pageSize = 12,
-  search = ""
+  search = "",
+  seed?: number
 ): Promise<PaginatedMovies> {
   const params = new URLSearchParams({
     page: String(page),
     page_size: String(pageSize),
     search,
   });
+
+  if (seed !== undefined) {
+    params.set("seed", String(seed));
+  }
 
   const response = await fetch(
     `${API_URL}/movies?${params.toString()}`
