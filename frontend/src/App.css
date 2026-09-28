@@ -1647,3 +1647,126 @@ input::placeholder, textarea::placeholder { color: #929b97; }
       repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ===== Minha conta - filmes ===== */
+
+.account-movies-section {
+  margin-top: 2.5rem;
+}
+
+.account-movies-section
+.account-section-heading {
+  margin-bottom: 1rem;
+}
+
+.account-movies-section
+.account-section-heading h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.account-movies-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(6, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.account-movie-card {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.account-movie-poster {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #202124;
+}
+
+.account-movie-poster img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition:
+    transform 180ms ease;
+}
+
+.account-movie-card:hover
+.account-movie-poster img {
+  transform: scale(1.025);
+}
+
+.account-movie-no-poster {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.45;
+}
+
+.account-movie-info {
+  margin-top: 0.65rem;
+}
+
+.account-movie-info h3 {
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-movie-year {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.account-movie-rating,
+.account-movie-watched {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.account-movie-rating {
+  color: var(--orange);
+}
+
+.account-movie-watched {
+  color: var(--lime);
+}
+
+@media (max-width: 1000px) {
+  .account-movies-grid {
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(0, 1fr)
+      );
+  }
+}
+
+@media (max-width: 600px) {
+  .account-movies-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+}

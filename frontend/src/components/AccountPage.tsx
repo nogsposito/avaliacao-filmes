@@ -1,4 +1,3 @@
-
 import {
   useEffect,
   useState,
@@ -7,7 +6,6 @@ import {
 import {
   ArrowLeft,
   Clapperboard,
-  Pencil,
   Star,
   UserRound,
 } from "lucide-react";
@@ -39,17 +37,16 @@ function AccountPage({
   onBack,
   onOpenMovie,
 }: AccountPageProps) {
-  const { user, token } =
-    useAuth();
+  const { user, token } = useAuth();
 
-  const [myMovies, setMyMovies] = useState<MyMovie[]>([]);
-  const [moviesLoading, setMoviesLoading] = useState(true);
+  const [myMovies, setMyMovies] =
+    useState<MyMovie[]>([]);
+
+  const [moviesLoading, setMoviesLoading] =
+    useState(true);
 
   const [reviews, setReviews] =
     useState<MyReview[]>([]);
-
-  const [loading, setLoading] =
-    useState(true);
 
   const [error, setError] =
     useState("");
@@ -59,23 +56,17 @@ function AccountPage({
 
     async function loadReviews() {
       if (!token) {
-        setLoading(false);
         return;
       }
 
-      setLoading(true);
       setError("");
 
       try {
         const data =
-          await getMyReviews(
-            token
-          );
+          await getMyReviews(token);
 
         if (active) {
-          setReviews(
-            data
-          );
+          setReviews(data);
         }
       } catch (err) {
         if (active) {
@@ -83,12 +74,6 @@ function AccountPage({
             err instanceof Error
               ? err.message
               : "Erro ao carregar seu histórico."
-          );
-        }
-      } finally {
-        if (active) {
-          setLoading(
-            false
           );
         }
       }
@@ -106,8 +91,14 @@ function AccountPage({
 
     async function loadMyMovies() {
       if (!token) {
-        setMoviesLoading(false);
+        if (active) {
+          setMoviesLoading(false);
+        }
         return;
+      }
+
+      if (active) {
+        setMoviesLoading(true);
       }
 
       try {
@@ -116,11 +107,19 @@ function AccountPage({
         if (active) {
           setMyMovies(data);
         }
-      } catch (error) {
+      } catch (err) {
         console.error(
           "Erro ao carregar filmes do usuário:",
-          error
+          err
         );
+
+        if (active) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Erro ao carregar seus filmes."
+          );
+        }
       } finally {
         if (active) {
           setMoviesLoading(false);
@@ -135,67 +134,12 @@ function AccountPage({
     };
   }, [token]);
 
-  <section className="account-movies-section">
-    <div className="account-section-heading">
-      <p className="eyebrow">
-        Sua atividade
-      </p>
-
-      <h2>Seus filmes</h2>
-    </div>
-
-    {moviesLoading ? (
-      <p>Carregando seus filmes...</p>
-    ) : myMovies.length === 0 ? (
-      <p className="account-empty">
-        Você ainda não marcou nenhum filme como assistido.
-      </p>
-    ) : (
-      <div className="account-movies-grid">
-        {myMovies.map((movie) => (
-          <button
-            type="button"
-            className="account-movie-card"
-            key={movie.movie_id}
-            onClick={() =>
-              onOpenMovie(movie.movie_id)
-            }
-          >
-            <div className="account-movie-poster">
-              {movie.url_poster ? (
-                <img
-                  src={movie.url_poster}
-                  alt={`Pôster de ${movie.titulo}`}
-                  loading="lazy"
-                />
-              ) : (
-                <span>Sem pôster</span>
-              )}
-            </div>
-
-            <div className="account-movie-info">
-              <h3>{movie.titulo}</h3>
-
-              {movie.nota !== null ? (
-                <span className="account-movie-rating">
-                  ★ {movie.nota}/5
-                </span>
-              ) : (
-                <span className="account-movie-watched">
-                  ✓ Assistido
-                </span>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
-    )}
-  </section>
-
   if (!user) {
     return (
       <main className="container account-page">
-        <p>Usuário não carregado.</p>
+        <p>
+          Usuário não carregado.
+        </p>
 
         <button
           type="button"
@@ -208,13 +152,11 @@ function AccountPage({
     );
   }
 
-  const uniqueMovies =
-    new Set(
-      reviews.map(
-        (review) =>
-          review.movie_id
-      )
-    ).size;
+  const reviewedMovies =
+    myMovies.filter(
+      (movie) =>
+        movie.nota !== null
+    ).length;
 
   return (
     <main className="container account-page">
@@ -223,18 +165,14 @@ function AccountPage({
         className="back-button"
         onClick={onBack}
       >
-        <ArrowLeft
-          size={18}
-        />
-        Voltar ao
-        catálogo
+        <ArrowLeft size={18} />
+
+        Voltar ao catálogo
       </button>
 
       <section className="account-profile">
         <div className="account-profile-avatar">
-          <UserRound
-            size={34}
-          />
+          <UserRound size={34} />
         </div>
 
         <div>
@@ -243,29 +181,33 @@ function AccountPage({
           </p>
 
           <h1>
-            {
-              user.username
-            }
+            {user.username}
           </h1>
 
           <p>
-            {
-              user.email
-            }
+            {user.email}
           </p>
         </div>
       </section>
 
       <div className="account-stats">
         <div>
-          <Clapperboard
-            size={21}
-          />
+          <Clapperboard size={21} />
 
           <strong>
-            {
-              uniqueMovies
-            }
+            {myMovies.length}
+          </strong>
+
+          <span>
+            Filmes assistidos
+          </span>
+        </div>
+
+        <div>
+          <Star size={21} />
+
+          <strong>
+            {reviewedMovies}
           </strong>
 
           <span>
@@ -274,39 +216,32 @@ function AccountPage({
         </div>
 
         <div>
-          <Star
-            size={21}
-          />
+          <Star size={21} />
 
           <strong>
-            {
-              reviews.length
-            }
+            {reviews.length}
           </strong>
 
           <span>
-            Avaliações
-            publicadas
+            Avaliações publicadas
           </span>
         </div>
       </div>
 
-      <section className="account-history">
+      <section className="account-movies-section">
         <div className="account-section-heading">
           <p className="eyebrow">
             SEU HISTÓRICO
           </p>
 
           <h2>
-            Últimas
-            avaliações
+            Seus filmes
           </h2>
         </div>
 
-        {loading && (
+        {moviesLoading && (
           <p>
-            Carregando
-            seu histórico...
+            Carregando seus filmes...
           </p>
         )}
 
@@ -319,136 +254,104 @@ function AccountPage({
           </p>
         )}
 
-        {!loading &&
+        {!moviesLoading &&
           !error &&
-          reviews.length ===
-            0 && (
+          myMovies.length === 0 && (
             <div className="account-empty">
               <Clapperboard
                 size={35}
               />
 
               <h3>
-                Seu diário
-                começa com
-                um filme.
+                Seu diário começa
+                com um filme.
               </h3>
 
               <p>
-                Explore o
-                catálogo e
-                publique sua
-                primeira
-                avaliação.
+                Marque um filme como
+                assistido ou publique
+                uma avaliação.
               </p>
 
               <button
                 type="button"
                 className="primary-button"
-                onClick={
-                  onBack
-                }
+                onClick={onBack}
               >
-                Explorar
-                filmes
+                Explorar filmes
               </button>
             </div>
           )}
 
-        <div className="account-review-list">
-          {reviews.map(
-            (review) => (
-              <article
-                className="account-review-card"
-                key={
-                  review.review_id
-                }
-              >
-                <div className="account-review-poster">
-                  {review.url_poster ? (
-                    <img
-                      src={
-                        review.url_poster
-                      }
-                      alt={
-                        `Pôster de ${review.titulo}`
-                      }
-                      loading="lazy"
-                    />
-                  ) : (
-                    <Clapperboard
-                      size={26}
-                    />
-                  )}
-                </div>
-
-                <div className="account-review-content">
-                  <div className="account-review-top">
-                    <div>
-                      <h3>
-                        {
-                          review.titulo
-                        }
-                      </h3>
-
-                      <small>
-                        {review.ano_lancamento ??
-                          "Ano desconhecido"}
-                      </small>
+        {!moviesLoading &&
+          !error &&
+          myMovies.length > 0 && (
+            <div className="account-movies-grid">
+              {myMovies.map(
+                (movie) => (
+                  <button
+                    type="button"
+                    className="account-movie-card"
+                    key={
+                      movie.movie_id
+                    }
+                    onClick={() =>
+                      onOpenMovie(
+                        movie.movie_id
+                      )
+                    }
+                  >
+                    <div className="account-movie-poster">
+                      {movie.url_poster ? (
+                        <img
+                          src={
+                            movie.url_poster
+                          }
+                          alt={`Pôster de ${movie.titulo}`}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="account-movie-no-poster">
+                          <Clapperboard
+                            size={26}
+                          />
+                        </div>
+                      )}
                     </div>
 
-                    <span className="account-review-rating">
-                      <Star
-                        size={
-                          16
-                        }
-                        fill="currentColor"
-                      />
+                    <div className="account-movie-info">
+                      <h3>
+                        {movie.titulo}
+                      </h3>
 
-                      {formatRating(
-                        review.nota
+                      <span className="account-movie-year">
+                        {movie.ano_lancamento ??
+                          "Ano desconhecido"}
+                      </span>
+
+                      {movie.nota !==
+                      null ? (
+                        <span className="account-movie-rating">
+                          <Star
+                            size={14}
+                            fill="currentColor"
+                          />
+
+                          {formatRating(
+                            movie.nota
+                          )}
+                        </span>
+                      ) : (
+                        <span className="account-movie-watched">
+                          Assistido
+                        </span>
                       )}
-                    </span>
-                  </div>
-
-                  <p>
-                    {
-                      review.comentario
-                    }
-                  </p>
-
-                  <div className="account-review-bottom">
-                    <small>
-                      {new Date(
-                        review.created_at
-                      ).toLocaleDateString(
-                        "pt-BR"
-                      )}
-                    </small>
-
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() =>
-                        onOpenMovie(
-                          review.movie_id
-                        )
-                      }
-                    >
-                      <Pencil
-                        size={
-                          15
-                        }
-                      />
-                      Ver ou
-                      editar
-                    </button>
-                  </div>
-                </div>
-              </article>
-            )
+                    </div>
+                  </button>
+                )
+              )}
+            </div>
           )}
-        </div>
       </section>
     </main>
   );
