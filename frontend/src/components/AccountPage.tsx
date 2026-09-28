@@ -6,6 +6,7 @@ import {
 import {
   ArrowLeft,
   Clapperboard,
+  PlusCircle,
   Star,
   UserRound,
 } from "lucide-react";
@@ -13,7 +14,9 @@ import {
 import { useAuth } from "../auth/AuthContext";
 
 import {
+  getMovies,
   getMyMovies,
+  type Movie,
   type MyMovie,
 } from "../services/movies";
 
@@ -42,8 +45,20 @@ function AccountPage({
   const [myMovies, setMyMovies] =
     useState<MyMovie[]>([]);
 
-  const [moviesLoading, setMoviesLoading] =
-    useState(true);
+  const [
+    createdMovies,
+    setCreatedMovies,
+  ] = useState<Movie[]>([]);
+
+  const [
+    moviesLoading,
+    setMoviesLoading,
+  ] = useState(true);
+
+  const [
+    createdMoviesLoading,
+    setCreatedMoviesLoading,
+  ] = useState(true);
 
   const [reviews, setReviews] =
     useState<MyReview[]>([]);
@@ -94,6 +109,7 @@ function AccountPage({
         if (active) {
           setMoviesLoading(false);
         }
+
         return;
       }
 
@@ -102,7 +118,8 @@ function AccountPage({
       }
 
       try {
-        const data = await getMyMovies(token);
+        const data =
+          await getMyMovies(token);
 
         if (active) {
           setMyMovies(data);
@@ -133,6 +150,67 @@ function AccountPage({
       active = false;
     };
   }, [token]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCreatedMovies() {
+      if (!user) {
+        if (active) {
+          setCreatedMoviesLoading(false);
+        }
+
+        return;
+      }
+
+      if (active) {
+        setCreatedMoviesLoading(true);
+      }
+
+      try {
+        const data = await getMovies(
+        1,
+        100
+      );
+
+        if (!active) {
+          return;
+        }
+
+        const movies =
+          data.items.filter(
+            (movie: Movie) =>
+              movie.created_by_user_id ===
+              user.id
+          );
+
+        setCreatedMovies(movies);
+      } catch (err) {
+        console.error(
+          "Erro ao carregar filmes criados:",
+          err
+        );
+
+        if (active) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Erro ao carregar filmes criados."
+          );
+        }
+      } finally {
+        if (active) {
+          setCreatedMoviesLoading(false);
+        }
+      }
+    }
+
+    loadCreatedMovies();
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   if (!user) {
     return (
@@ -346,6 +424,100 @@ function AccountPage({
                           Assistido
                         </span>
                       )}
+                    </div>
+                  </button>
+                )
+              )}
+            </div>
+          )}
+      </section>
+
+      <section className="account-movies-section">
+        <div className="account-section-heading">
+          <p className="eyebrow">
+            SUA CONTRIBUIÇÃO
+          </p>
+
+          <h2>
+            Filmes criados por você
+          </h2>
+        </div>
+
+        {createdMoviesLoading && (
+          <p>
+            Carregando filmes criados...
+          </p>
+        )}
+
+        {!createdMoviesLoading &&
+          createdMovies.length ===
+            0 && (
+            <div className="account-empty">
+              <PlusCircle
+                size={35}
+              />
+
+              <h3>
+                Você ainda não adicionou
+                nenhum filme.
+              </h3>
+
+              <p>
+                Os filmes adicionados por
+                você aparecerão aqui.
+              </p>
+            </div>
+          )}
+
+        {!createdMoviesLoading &&
+          createdMovies.length >
+            0 && (
+            <div className="account-movies-grid">
+              {createdMovies.map(
+                (movie) => (
+                  <button
+                    type="button"
+                    className="account-movie-card"
+                    key={
+                      movie.sk_movie_id
+                    }
+                    onClick={() =>
+                      onOpenMovie(
+                        movie.sk_movie_id
+                      )
+                    }
+                  >
+                    <div className="account-movie-poster">
+                      {movie.url_poster ? (
+                        <img
+                          src={
+                            movie.url_poster
+                          }
+                          alt={`Pôster de ${movie.titulo}`}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="account-movie-no-poster">
+                          <Clapperboard
+                            size={26}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="account-movie-info">
+                      <h3>
+                        {movie.titulo}
+                      </h3>
+
+                      <span className="account-movie-year">
+                        {movie.ano_lancamento ??
+                          "Ano desconhecido"}
+                      </span>
+
+                      <span className="account-movie-watched">
+                        Criado por você
+                      </span>
                     </div>
                   </button>
                 )
