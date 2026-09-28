@@ -27,6 +27,7 @@ export interface Person {
 export interface Review {
   sk_movie_review_id: string;
   sk_movie_id: string;
+  user_id: string | null;
   nome: string;
   nota: number;
   comentario: string;
@@ -181,6 +182,41 @@ export async function createReview(
       response.status === 401
         ? "Sua sessão expirou. Entre novamente."
         : `Não foi possível publicar a avaliação (HTTP ${response.status}).`
+    );
+  }
+
+  return response.json();
+}
+
+export async function updateReview(
+  movieId: string,
+  reviewId: string,
+  data: ReviewCreate,
+  token: string
+): Promise<Review> {
+  const response = await fetch(
+    `${API_URL}/movies/${encodeURIComponent(
+      movieId
+    )}/reviews/${encodeURIComponent(reviewId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error(
+        "Você só pode editar suas próprias avaliações."
+      );
+    }
+
+    throw new Error(
+      `Não foi possível editar a avaliação (HTTP ${response.status}).`
     );
   }
 

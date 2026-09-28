@@ -86,3 +86,42 @@ export async function getCurrentUser(
 
   return response.json();
 }
+
+
+export interface MyReview {
+  review_id: string;
+  movie_id: string;
+  titulo: string;
+  url_poster: string | null;
+  ano_lancamento: number | null;
+  nota: number;
+  comentario: string;
+  created_at: string;
+}
+
+export async function getMyReviews(
+  token: string
+): Promise<MyReview[]> {
+  const response = await fetch(
+    `${API_URL}/auth/me/reviews`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error(
+        "Sua sessão expirou. Entre novamente."
+      );
+    }
+
+    throw new Error(
+      "Não foi possível carregar seu histórico."
+    );
+  }
+
+  return response.json();
+}

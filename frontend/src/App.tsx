@@ -10,6 +10,8 @@ import MovieForm from "./components/MovieForm";
 import MovieLoader from "./components/MovieLoader";
 import RegisterPage from "./components/RegisterPage";
 
+import AccountPage from "./components/AccountPage";
+
 import {
   deleteMovie,
   getMovie,
@@ -44,6 +46,17 @@ function App() {
         : null;
     });
 
+    const [showAccount, setShowAccount] = useState(
+      window.location.pathname === "/account"
+    );
+
+    function openAccount() {
+      window.history.pushState({}, "", "/account");
+      setSelectedMovieId(null);
+      setShowAccount(true);
+      setAccountMenuOpen(false);
+    }
+
   function openMovie(movieId: string) {
     window.history.pushState(
       {},
@@ -52,11 +65,13 @@ function App() {
     );
 
     setSelectedMovieId(movieId);
+    setShowAccount(false)
   }
 
   function closeMovie() {
     window.history.pushState({}, "", "/");
     setSelectedMovieId(null);
+    setShowAccount(false)
   }
 
   useEffect(() => {
@@ -67,6 +82,10 @@ function App() {
 
       setSelectedMovieId(
         match ? decodeURIComponent(match[1]) : null
+      );
+
+      setShowAccount(
+        window.location.pathname === "/account"
       );
     }
 
@@ -264,6 +283,15 @@ function App() {
     );
   }
 
+  if (showAccount) {
+    return (
+      <AccountPage
+        onBack={closeMovie}
+        onOpenMovie={openMovie}
+      />
+    );
+  }
+
   if (selectedMovieId) {
     return (
       <>
@@ -345,6 +373,14 @@ function App() {
 
                   <div className="account-dropdown-divider" />
 
+                  <button
+                    type="button"
+                    className="account-logout"
+                    onClick={openAccount}
+                  >
+                    Minha conta
+                  </button>
+                
                   <button
                     type="button"
                     className="account-logout"
