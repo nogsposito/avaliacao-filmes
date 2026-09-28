@@ -103,10 +103,223 @@ async def list_movies(
         total_pages=ceil(total / page_size),
     )
 
+# Retorna categorias variadas para a tela inicial.
+@router.get("/home-categories")
+async def get_home_categories(
+    limit: int = Query(
+        default=10,
+        ge=1,
+        le=15,
+    ),
+    db: AsyncSession = Depends(get_db),
+):
+    import random
+
+    result = await db.execute(
+        select(DimMovie)
+        .options(
+            selectinload(
+                DimMovie.genres
+            )
+        )
+        .where(
+            DimMovie.url_poster.is_not(
+                None
+            ),
+            DimMovie.url_poster != "",
+        )
+    )
+
+    movies = list(
+        result.scalars().unique().all()
+    )
+
+    categories = []
+
+    # -------------------------
+    # GÊNEROS
+    # -------------------------
+
+    genres: dict[
+        str,
+        list[DimMovie],
+    ] = {}
+
+    for movie in movies:
+        for genre in movie.genres:
+            genres.setdefault(
+                genre.nome_genero,
+                [],
+            ).append(movie)
+
+    for genre_name, genre_movies in (
+        genres.items()
+    ):
+        if len(genre_movies) < 3:
+            continue
+
+        random.shuffle(genre_movies)
+
+        categories.append(
+            {
+                "id": (
+                    "genre-"
+                    + genre_name
+                    .lower()
+                    .replace(" ", "-")
+                ),
+                "title": genre_name,
+                "movies": [
+                    MovieOut.model_validate(
+                        movie
+                    )
+                    for movie in (
+                        genre_movies[:20]
+                    )
+                ],
+            }
+        )
+
+    # -------------------------
+    # DÉCADAS
+    # -------------------------
+
+    decades = [
+        (2020, 2029, "Anos 2020"),
+        (2010, 2019, "Anos 2010"),
+        (2000, 2009, "Anos 2000"),
+        (1990, 1999, "Anos 90"),
+        (1980, 1989, "Anos 80"),
+        (1970, 1979, "Anos 70"),
+        (1960, 1969, "Anos 60"),
+        (1950, 1959, "Anos 50"),
+    ]
+
+    for start, end, title in decades:
+        decade_movies = [
+            movie
+            for movie in movies
+            if (
+                movie.ano_lancamento
+                is not None
+                and start
+                <= movie.ano_lancamento
+                <= end
+            )
+        ]
+
+        if len(decade_movies) < 3:
+            continue
+
+        random.shuffle(decade_movies)
+
+        categories.append(
+            {
+                "id": f"decade-{start}",
+                "title": title,
+                "movies": [
+                    MovieOut.model_validate(
+                        movie
+                    )
+                    for movie in (
+                        decade_movies[:20]
+                    )
+                ],
+            }
+        )
+
+    # -------------------------
+    # FILMES RECENTES
+    # -------------------------
+
+    recent_movies = [
+        movie
+        for movie in movies
+        if (
+            movie.ano_lancamento
+            is not None
+            and movie.ano_lancamento
+            >= 2020
+        )
+    ]
+
+    if len(recent_movies) >= 3:
+        random.shuffle(recent_movies)
+
+        categories.append(
+            {
+                "id": "recent",
+                "title": "Filmes recentes",
+                "movies": [
+                    MovieOut.model_validate(
+                        movie
+                    )
+                    for movie in (
+                        recent_movies[:20]
+                    )
+                ],
+            }
+        )
+
+    # -------------------------
+    # CLÁSSICOS
+    # -------------------------
+
+    classic_movies = [
+        movie
+        for movie in movies
+        if (
+            movie.ano_lancamento
+            is not None
+            and movie.ano_lancamento
+            < 1980
+        )
+    ]
+
+    if len(classic_movies) >= 3:
+        random.shuffle(classic_movies)
+
+        categories.append(
+            {
+                "id": "classics",
+                "title": "Clássicos",
+                "movies": [
+                    MovieOut.model_validate(
+                        movie
+                    )
+                    for movie in (
+                        classic_movies[:20]
+                    )
+                ],
+            }
+        )
+
+    # Evita categorias vazias e
+    # escolhe somente algumas para
+    # cada carregamento da home.
+
+    if len(categories) <= limit:
+        selected_categories = (
+            categories
+        )
+    else:
+        selected_categories = (
+            random.sample(
+                categories,
+                limit,
+            )
+        )
+
+    return selected_categories
+
 # Retorna uma seleção variada de filmes para a tela inicial.
 @router.get("/featured", response_model=list[MovieOut])
 async def get_featured_movies(
-    limit: int = Query(default=6, ge=1, le=12),
+    limit: int = Query(
+        default=18,
+        ge=1,
+        le=30,
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     # Seleciona primeiro um conjunto de filmes recentes.
@@ -141,7 +354,11 @@ async def get_featured_movies(
     response_model=list[RecentReviewOut],
 )
 async def get_recent_reviews(
-    limit: int = Query(default=6, ge=1, le=12),
+    limit: int = Query(
+        default=18,
+        ge=1,
+        le=30,
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(

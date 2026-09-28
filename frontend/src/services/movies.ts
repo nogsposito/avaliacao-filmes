@@ -66,6 +66,12 @@ export interface MyMovie {
   comentario: string | null;
 }
 
+export interface HomeCategory {
+  id: string;
+  title: string;
+  movies: Movie[];
+}
+
 export interface RecentReview {
   sk_movie_review_id: string;
   sk_movie_id: string;
@@ -99,6 +105,22 @@ export async function getMovies(
 
   if (!response.ok) {
     throw new Error("Não foi possível carregar os filmes.");
+  }
+
+  return response.json();
+}
+
+export async function getHomeCategories(
+  limit = 10
+): Promise<HomeCategory[]> {
+  const response = await fetch(
+    `${API_URL}/movies/home-categories?limit=${limit}`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Não foi possível carregar as categorias."
+    );
   }
 
   return response.json();
