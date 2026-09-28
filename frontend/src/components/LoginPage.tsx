@@ -50,13 +50,6 @@ function LoginPage({
   return (
     <main className="auth-layout">
       <section className="auth-visual">
-        <button
-          type="button"
-          className="auth-back"
-          onClick={onBack}
-        >
-          ← Voltar ao catálogo
-        </button>
 
         <div className="auth-art">
           <div className="auth-art-ring auth-art-ring-one" />

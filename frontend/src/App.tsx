@@ -402,6 +402,20 @@ function App() {
     );
   }
 
+  if (!user && authScreen === null) {
+    return (
+      <LoginPage
+        onBack={() => {}}
+        onRegister={() =>
+          setAuthScreen("register")
+        }
+        onSuccess={
+          handleAuthSuccess
+        }
+      />
+    );
+  }
+
   if (authScreen === "login") {
     return (
       <LoginPage
