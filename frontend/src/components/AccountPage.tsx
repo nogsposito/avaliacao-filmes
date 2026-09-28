@@ -94,7 +94,19 @@ function AccountPage({
   }, [token]);
 
   if (!user) {
-    return null;
+    return (
+      <main className="container account-page">
+        <p>Usuário não carregado.</p>
+
+        <button
+          type="button"
+          className="back-button"
+          onClick={onBack}
+        >
+          Voltar ao catálogo
+        </button>
+      </main>
+    );
   }
 
   const uniqueMovies =

@@ -78,6 +78,22 @@ export async function getMovies(
   return response.json();
 }
 
+export async function getFeaturedMovies(
+  limit = 6
+): Promise<Movie[]> {
+  const response = await fetch(
+    `${API_URL}/movies/featured?limit=${limit}`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Não foi possível carregar os filmes em destaque."
+    );
+  }
+
+  return response.json();
+}
+
 export async function getMovie(
   movieId: string
 ): Promise<MovieDetail> {

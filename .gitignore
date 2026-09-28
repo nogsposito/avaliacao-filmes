@@ -20,3 +20,6 @@ htmlcov/
 .vscode/
 
 backend/data/*.csv
+
+node_modules/
+frontend/node_modules/

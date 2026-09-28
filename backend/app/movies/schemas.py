@@ -142,10 +142,12 @@ class ReviewCreate(BaseModel):
 class ReviewOut(BaseModel):
     sk_movie_review_id: str
     sk_movie_id: str
+    user_id: str | None
     nome: str
     nota: float
     comentario: str
     created_at: datetime
+
 
 # Schema para output de avaliações de filme, incluindo estatísticas.
 class MovieReviewsOut(BaseModel):

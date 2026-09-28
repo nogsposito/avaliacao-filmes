@@ -14,6 +14,7 @@ import AccountPage from "./components/AccountPage";
 
 import {
   deleteMovie,
+  getFeaturedMovies,
   getMovie,
   getMovies,
   type Movie,
@@ -34,6 +35,9 @@ function App() {
     useState(false);
 
   const [movies, setMovies] = useState<Movie[]>([]);
+
+  const [featuredMovies, setFeaturedMovies] =
+    useState<Movie[]>([]);
 
   const [selectedMovieId, setSelectedMovieId] =
     useState<string | null>(() => {
@@ -120,6 +124,31 @@ function App() {
   const [deleteError, setDeleteError] = useState("");
 
   const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadFeaturedMovies() {
+      try {
+        const data = await getFeaturedMovies(6);
+
+        if (active) {
+          setFeaturedMovies(data);
+        }
+      } catch (err) {
+        console.error(
+          "Erro ao carregar filmes em destaque:",
+          err
+        );
+      }
+    }
+
+    loadFeaturedMovies();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -436,6 +465,49 @@ function App() {
           </button>
         </div>
       </header>
+
+      {featuredMovies.length > 0 && !search && (
+        <section className="featured-section">
+          <div className="featured-heading">
+            <div>
+              <p className="eyebrow">PARA DESCOBRIR</p>
+              <h2>Em destaque</h2>
+            </div>
+          </div>
+
+          <div className="featured-grid">
+            {featuredMovies.map((movie) => (
+              <button
+                type="button"
+                className="featured-card"
+                key={movie.sk_movie_id}
+                onClick={() => openMovie(movie.sk_movie_id)}
+              >
+                <div className="featured-poster">
+                  {movie.url_poster ? (
+                    <img
+                      src={movie.url_poster}
+                      alt={`Pôster de ${movie.titulo}`}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span>Sem pôster</span>
+                  )}
+                </div>
+
+                <div className="featured-info">
+                  <h3>{movie.titulo}</h3>
+
+                  <span>
+                    {movie.ano_lancamento ??
+                      "Ano desconhecido"}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="toolbar">
         <input

@@ -1,7 +1,9 @@
+from datetime import datetime
 from math import ceil
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -11,6 +13,7 @@ from app.users.models import User
 
 from app.db.session import get_db
 from app.movies.models import DimGenre, DimMovie, DimPerson, MovieReview
+
 from app.movies.schemas import (
     MovieCreate,
     MovieDetail,
@@ -50,7 +53,11 @@ async def list_movies(
 
     query = (
         query
-        .order_by(DimMovie.titulo, DimMovie.sk_movie_id)
+        .order_by(
+            DimMovie.ano_lancamento.desc().nullslast(),
+            DimMovie.titulo,
+            DimMovie.sk_movie_id,
+        )
         .offset((page - 1) * page_size)
         .limit(page_size)
     )
@@ -68,6 +75,39 @@ async def list_movies(
         page_size=page_size,
         total_pages=ceil(total / page_size),
     )
+
+# Retorna uma seleção variada de filmes para a tela inicial.
+@router.get("/featured", response_model=list[MovieOut])
+async def get_featured_movies(
+    limit: int = Query(default=6, ge=1, le=12),
+    db: AsyncSession = Depends(get_db),
+):
+    # Seleciona primeiro um conjunto de filmes recentes.
+    result = await db.execute(
+        select(DimMovie)
+        .where(DimMovie.url_poster.is_not(None))
+        .order_by(
+            DimMovie.ano_lancamento.desc().nullslast(),
+            DimMovie.titulo,
+        )
+        .limit(30)
+    )
+
+    candidates = list(result.scalars().all())
+
+    if len(candidates) <= limit:
+        selected = candidates
+    else:
+        # A escolha varia a cada carregamento,
+        # mas não interfere na paginação do catálogo.
+        import random
+
+        selected = random.sample(candidates, limit)
+
+    return [
+        MovieOut.model_validate(movie)
+        for movie in selected
+    ]
 
 # Busca o filme e carrega seus relacionamentos.
 @router.get("/{movie_id}", response_model=MovieDetail)
@@ -176,122 +216,47 @@ async def create_movie(
     return format_movie_detail(movie)
 
 
-@router.patch("/{movie_id}", response_model=MovieDetail)
-async def update_movie(
+
+# Atualiza uma avaliação pertencente ao usuário autenticado.
+@router.patch(
+    "/{movie_id}/reviews/{review_id}",
+    response_model=ReviewOut,
+)
+async def update_review(
     movie_id: str,
-    data: MovieUpdate,
+    review_id: str,
+    data: ReviewCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    # Busca o filme com seus relacionamentos.
     result = await db.execute(
-        select(DimMovie)
-        .options(
-            selectinload(DimMovie.genres),
-            selectinload(DimMovie.companies),
-            selectinload(DimMovie.people),
-            selectinload(DimMovie.reviews),
+        select(MovieReview).where(
+            MovieReview.sk_movie_review_id == review_id,
+            MovieReview.sk_movie_id == movie_id,
         )
-        .where(DimMovie.sk_movie_id == movie_id)
     )
 
-    movie = result.scalar_one_or_none()
+    review = result.scalar_one_or_none()
 
-    if movie is None:
+    if review is None:
         raise HTTPException(
             status_code=404,
-            detail="Filme não encontrado",
+            detail="Avaliação não encontrada.",
         )
 
-    changes = data.model_dump(exclude_unset=True)
-
-    # Atualiza os campos básicos.
-    for field in (
-        "titulo",
-        "ano_lancamento",
-        "sinopse",
-        "duracao_minutos",
-        "url_poster",
-    ):
-        if field in changes:
-            setattr(movie, field, changes[field])
-
-    # Atualiza o diretor, preservando outros participantes.
-    if "diretor" in changes:
-        if changes["diretor"] is None:
-            raise HTTPException(
-                status_code=422,
-                detail="O diretor não pode ser nulo",
-            )
-
-        result = await db.execute(
-            select(DimPerson).where(
-                func.lower(DimPerson.nome_pessoa)
-                == changes["diretor"].lower(),
-                DimPerson.tipo_pessoa == "Diretor",
-            )
+    if review.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Você só pode editar suas próprias avaliações.",
         )
 
-        diretor = result.scalar_one_or_none()
-
-        if diretor is None:
-            diretor = DimPerson(
-                nome_pessoa=changes["diretor"],
-                tipo_pessoa="Diretor",
-            )
-            db.add(diretor)
-
-        movie.people = [
-            person
-            for person in movie.people
-            if person.tipo_pessoa != "Diretor"
-        ]
-        movie.people.append(diretor)
-
-    # Substitui os gêneros quando informados.
-    if "generos" in changes:
-        if not changes["generos"]:
-            raise HTTPException(
-                status_code=422,
-                detail="Informe pelo menos um gênero",
-            )
-
-        novos_generos = []
-
-        for nome in changes["generos"]:
-            result = await db.execute(
-                select(DimGenre).where(
-                    func.lower(DimGenre.nome_genero)
-                    == nome.lower()
-                )
-            )
-
-            genero = result.scalar_one_or_none()
-
-            if genero is None:
-                genero = DimGenre(nome_genero=nome)
-                db.add(genero)
-
-            novos_generos.append(genero)
-
-        movie.genres = novos_generos
+    review.nota = data.nota * 2
+    review.comentario = data.comentario
 
     await db.commit()
+    await db.refresh(review)
 
-    # Recarrega o filme para devolver os dados atualizados.
-    result = await db.execute(
-        select(DimMovie)
-        .options(
-            selectinload(DimMovie.genres),
-            selectinload(DimMovie.companies),
-            selectinload(DimMovie.people),
-            selectinload(DimMovie.reviews),
-        )
-        .where(DimMovie.sk_movie_id == movie_id)
-    )
-
-    movie = result.scalar_one()
-
-    return format_movie_detail(movie)
+    return format_review(review)
 
 
 @router.delete(
@@ -405,11 +370,13 @@ def format_review(review: MovieReview) -> ReviewOut:
     return ReviewOut(
         sk_movie_review_id=review.sk_movie_review_id,
         sk_movie_id=review.sk_movie_id,
+        user_id=review.user_id,
         nome=review.nome,
         nota=review.nota / 2,
         comentario=review.comentario,
         created_at=review.created_at,
     )
+
 
 # Formata os detalhes de um filme, incluindo relacionamentos e estatísticas de avaliações.
 def format_movie_detail(movie: DimMovie) -> MovieDetail:
