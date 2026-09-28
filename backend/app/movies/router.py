@@ -377,6 +377,33 @@ async def get_my_movies(
 
     return movies
 
+# Retorna os filmes criados pelo usuário autenticado.
+@router.get(
+    "/my-created-movies",
+    response_model=list[MovieOut],
+)
+async def get_my_created_movies(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(DimMovie)
+        .where(
+            DimMovie.created_by_user_id
+            == current_user.id
+        )
+        .order_by(
+            DimMovie.titulo
+        )
+    )
+
+    movies = result.scalars().all()
+
+    return [
+        MovieOut.model_validate(movie)
+        for movie in movies
+    ]
+
 # Retorna o status de assistido de um filme para o usuário autenticado.
 @router.get(
     "/{movie_id}/watch",

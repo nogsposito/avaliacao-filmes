@@ -164,6 +164,33 @@ export async function getMyMovies(
   return response.json();
 }
 
+export async function getMyCreatedMovies(
+  token: string
+): Promise<Movie[]> {
+  const response = await fetch(
+    `${API_URL}/movies/my-created-movies`,
+    {
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const body = await response
+      .json()
+      .catch(() => null);
+
+    throw new Error(
+      body?.detail ??
+        "Não foi possível carregar os filmes criados por você."
+    );
+  }
+
+  return response.json();
+}
+
 export async function getRecentReviews(
   limit = 6
 ): Promise<RecentReview[]> {
